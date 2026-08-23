@@ -9,7 +9,59 @@
   "candidate_domains_quarantined": 4,
   "candidate_domains_rejected": 0,
   "candidate_domains_suspended": 0,
+  "catalog_net_change": 0,
+  "catalog_sync": [
+    {
+      "discovered_urls": 3603,
+      "elapsed_seconds": 60.96,
+      "new_urls": 0,
+      "robots_status": "ok",
+      "sitemap_docs": 13,
+      "source": "forktospoon.com",
+      "status": "ok"
+    },
+    {
+      "discovered_urls": 330,
+      "elapsed_seconds": 5.8,
+      "new_urls": 0,
+      "robots_status": "ok",
+      "sitemap_docs": 8,
+      "source": "kelvinskitchen.com",
+      "status": "ok"
+    },
+    {
+      "discovered_urls": 477,
+      "elapsed_seconds": 0.96,
+      "new_urls": 0,
+      "robots_status": "ok",
+      "sitemap_docs": 7,
+      "source": "temeculablogs.com",
+      "status": "ok"
+    },
+    {
+      "discovered_urls": 225,
+      "elapsed_seconds": 8.27,
+      "new_urls": 0,
+      "robots_status": "ok",
+      "sitemap_docs": 6,
+      "source": "thestayathomechef.com",
+      "status": "ok"
+    },
+    {
+      "discovered_urls": 318,
+      "elapsed_seconds": 8.21,
+      "new_urls": 0,
+      "robots_status": "ok",
+      "sitemap_docs": 8,
+      "source": "theyummybowl.com",
+      "status": "ok"
+    }
+  ],
+  "catalog_sync_generated_at": "2026-08-23T12:02:30.846285+00:00",
   "catalog_url_count": 7749,
+  "catalog_urls_added_after_promotion": 0,
+  "catalog_urls_coalesced": 0,
+  "catalog_urls_rewritten": 0,
   "effective_source_count": 45,
   "evaluations": [
     {
