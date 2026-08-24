@@ -51,3 +51,15 @@ sources:
   - domain: platedcravings.com
   - domain: rachelcooks.com
   - domain: melskitchencafe.com
+  - domain: airfryerworld.com
+    discovery_urls:
+      - https://airfryerworld.com/air-fryer/
+  - domain: myforkinglife.com
+    discovery_urls:
+      - https://www.myforkinglife.com/category/air-fryer-recipes/
+  - domain: staysnatched.com
+    discovery_urls:
+      - https://www.staysnatched.com/category/air-fryer/
+  - domain: thebigmansworld.com
+    discovery_urls:
+      - https://thebigmansworld.com/category/air-fryer-recipes/
