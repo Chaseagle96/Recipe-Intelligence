@@ -153,6 +153,41 @@ def publish_authority(config_path: str | Path, vertical: str) -> int:
     return subprocess.run(command, cwd=repo_root, env=environment, check=False).returncode
 
 
+def authority_decision(config_path: str | Path, vertical: str, *, recovery: bool = False) -> str:
+    from .authority import _read_json, evaluate_authority, ranking_is_current
+
+    definition = get_vertical(vertical, config_path)
+    authority = _read_json(definition.authority_path)
+    state = _read_json(definition.state_path)
+    summary = _read_json(definition.summary_path)
+    metrics = _read_json(definition.output_root / "source_expansion.json")
+    current = ranking_is_current(state=state, summary=summary, metrics=metrics)
+    return evaluate_authority(authority, ranking_current=current, recovery_requested=recovery)
+
+def authority_current(config_path: str | Path, vertical: str) -> bool:
+    from .authority import _read_json, ranking_is_current
+
+    definition = get_vertical(vertical, config_path)
+    return ranking_is_current(
+        state=_read_json(definition.state_path),
+        summary=_read_json(definition.summary_path),
+        metrics=_read_json(definition.output_root / "source_expansion.json"),
+    )
+
+def invalidate_authority_for_vertical(config_path: str | Path, vertical: str, reason: str) -> dict[str, Any]:
+    from .authority import invalidate_authority
+
+    definition = get_vertical(vertical, config_path)
+    return invalidate_authority(
+        vertical=definition.id,
+        metrics_path=definition.output_root / "source_expansion.json",
+        summary_path=definition.summary_path,
+        authority_path=definition.authority_path,
+        public_authority_path=definition.public_authority_path,
+        manifest_path=definition.manifest_path,
+        reason=reason,
+    )
+
 def rebuild_mobile_corpus(config_path: str | Path, vertical: str) -> int:
     definition = get_vertical(vertical, config_path)
     repo_root = _repo_root(config_path)
@@ -201,6 +236,20 @@ def _parser() -> argparse.ArgumentParser:
     authority.add_argument("--vertical", required=True)
     authority.add_argument("--config", default="config/source_discovery.yaml", type=Path)
 
+    decision = commands.add_parser("authority-decision")
+    decision.add_argument("--vertical", required=True)
+    decision.add_argument("--config", default="config/source_discovery.yaml", type=Path)
+    decision.add_argument("--recovery", action="store_true")
+
+    current = commands.add_parser("authority-current")
+    current.add_argument("--vertical", required=True)
+    current.add_argument("--config", default="config/source_discovery.yaml", type=Path)
+
+    invalidate = commands.add_parser("invalidate-authority")
+    invalidate.add_argument("--vertical", required=True)
+    invalidate.add_argument("--reason", default="source_or_catalog_generation_advanced")
+    invalidate.add_argument("--config", default="config/source_discovery.yaml", type=Path)
+
     corpus = commands.add_parser("rebuild-mobile-corpus")
     corpus.add_argument("--vertical", required=True)
     corpus.add_argument("--config", default="config/source_discovery.yaml", type=Path)
@@ -228,6 +277,12 @@ def main() -> None:
         raise SystemExit(run_vertical(args.config, args.vertical, args.mode, args.sources, args.extra))
     elif args.command == "publish-authority":
         raise SystemExit(publish_authority(args.config, args.vertical))
+    elif args.command == "authority-decision":
+        print(authority_decision(args.config, args.vertical, recovery=args.recovery))
+    elif args.command == "authority-current":
+        print(str(authority_current(args.config, args.vertical)).lower())
+    elif args.command == "invalidate-authority":
+        print(json.dumps(invalidate_authority_for_vertical(args.config, args.vertical, args.reason), sort_keys=True))
     elif args.command == "rebuild-mobile-corpus":
         raise SystemExit(rebuild_mobile_corpus(args.config, args.vertical))
     else:

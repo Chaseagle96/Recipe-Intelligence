@@ -48,27 +48,13 @@ jobs:
       - name: Install runtime dependencies
         run: pip install -r requirements.txt
 
-      - name: Mark Air Fryer serving generation refresh-required
+      - name: Evaluate authority invalidation for each vertical
         run: |
-          PYTHONPATH=src python scripts/ranking_authority.py invalidate \
-            --vertical air_fryer \
-            --metrics output/source_expansion.json \
-            --summary output/summary.json \
-            --authority output/authority.json \
-            --public-authority docs/api/authority.json \
-            --manifest docs/api/manifest.json \
-            --reason source_or_catalog_generation_advanced
-
-      - name: Mark Slow Cooker serving generation refresh-required
-        run: |
-          PYTHONPATH=src python scripts/ranking_authority.py invalidate \
-            --vertical slow_cooker \
-            --metrics verticals/slow_cooker/output/source_expansion.json \
-            --summary verticals/slow_cooker/output/summary.json \
-            --authority verticals/slow_cooker/output/authority.json \
-            --public-authority verticals/slow_cooker/docs/api/authority.json \
-            --manifest verticals/slow_cooker/docs/api/manifest.json \
-            --reason source_or_catalog_generation_advanced
+          for vertical in air-fryer slow-cooker; do
+            PYTHONPATH=src python -m airfryer_rankings.ops invalidate-authority \
+              --vertical "$vertical" \
+              --reason source_or_catalog_generation_advanced
+          done
 
       - name: Commit authority invalidation when needed
         shell: bash

@@ -105,39 +105,12 @@ jobs:
               print(f'::notice::Skipping stale postcheck for {vertical}: summary catalog={summary_catalog}, current catalog={current_catalog}, ranking_at={ranking_at}, catalog_sync_at={catalog_sync_at}. A newer source/catalog generation already advanced main.')
           PY
 
-      - name: Certify Air Fryer serving generation
+      - name: Certify serving generation
         if: >-
-          steps.vertical.outputs.vertical == 'air_fryer' &&
-          (github.event_name == 'workflow_dispatch' || steps.freshness.outputs.current == 'true')
+          github.event_name == 'workflow_dispatch' || steps.freshness.outputs.current == 'true'
         run: |
-          PYTHONPATH=src python scripts/ranking_authority.py publish \
-            --vertical air_fryer \
-            --sources config/sources.yaml \
-            --state data/state.json \
-            --registry data/source_registry.json \
-            --metrics output/source_expansion.json \
-            --summary output/summary.json \
-            --leaderboard output/leaderboard.csv \
-            --authority output/authority.json \
-            --public-authority docs/api/authority.json \
-            --manifest docs/api/manifest.json
-
-      - name: Certify Slow Cooker serving generation
-        if: >-
-          steps.vertical.outputs.vertical == 'slow_cooker' &&
-          (github.event_name == 'workflow_dispatch' || steps.freshness.outputs.current == 'true')
-        run: |
-          PYTHONPATH=src python scripts/ranking_authority.py publish \
-            --vertical slow_cooker \
-            --sources config/verticals/slow_cooker/sources.yaml \
-            --state verticals/slow_cooker/data/state.json \
-            --registry verticals/slow_cooker/data/source_registry.json \
-            --metrics verticals/slow_cooker/output/source_expansion.json \
-            --summary verticals/slow_cooker/output/summary.json \
-            --leaderboard verticals/slow_cooker/output/leaderboard.csv \
-            --authority verticals/slow_cooker/output/authority.json \
-            --public-authority verticals/slow_cooker/docs/api/authority.json \
-            --manifest verticals/slow_cooker/docs/api/manifest.json
+          PYTHONPATH=src python -m airfryer_rankings.ops publish-authority \
+            --vertical "${{ steps.vertical.outputs.vertical }}"
 
       - name: Commit certified serving generation
         if: >-

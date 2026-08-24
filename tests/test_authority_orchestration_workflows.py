@@ -78,7 +78,7 @@ def test_authority_self_heal_dispatches_only_stale_verticals() -> None:
 
     assert "Recipe Intelligence Authority Invalidation" in workflow
     assert "actions: write" in workflow
-    assert "jq -e '.authoritative == true and .status == \"authoritative\"'" in workflow
+    assert "authority-decision" in workflow
     assert "gh workflow run \"$workflow\"" in workflow
     assert "-f mode=daily" in workflow
     assert "hourly.yml 'Air Fryer'" in workflow
@@ -91,5 +91,5 @@ def test_authority_self_heal_avoids_duplicate_and_retry_loops() -> None:
     assert "gh run list" in workflow
     assert '.status == "queued"' in workflow
     assert '.status == "in_progress"' in workflow
-    assert "Recipe Intelligence — Slow Cooker" not in workflow
+    assert "dispatch_if_stale slow-cooker slow-cooker.yml" in workflow
     assert "workflows:\n      - Recipe Intelligence Authority Invalidation" in workflow

@@ -18,6 +18,36 @@ AUTHORITY_CONTRACT_VERSION = 2
 FULL_REFRESH_MODES = {"daily", "deep"}
 
 
+def evaluate_authority(
+    authority: dict[str, Any],
+    *,
+    ranking_current: bool | None = None,
+    recovery_requested: bool = False,
+) -> str:
+    """Return the single next lifecycle action without performing side effects."""
+
+    if authority.get("authoritative") is True and authority.get("status") == "authoritative":
+        if ranking_current is not False:
+            return "noop"
+        return "invalidate"
+    if recovery_requested:
+        return "recover"
+    return "refresh_required"
+
+
+def ranking_is_current(*, state: dict[str, Any], summary: dict[str, Any], metrics: dict[str, Any]) -> bool:
+    """Check whether the ranking summary still covers the latest catalog generation."""
+
+    ranking_at = _parse_dt(summary.get("generated_at"))
+    catalog_sync_at = _parse_dt(metrics.get("catalog_sync_generated_at"))
+    return (
+        int(summary.get("catalog_urls") or 0) == len(state.get("url_catalog", {}) or {})
+        and ranking_at is not None
+        and catalog_sync_at is not None
+        and ranking_at >= catalog_sync_at
+    )
+
+
 class AuthorityError(RuntimeError):
     """Raised when a serving artifact does not match current production inputs."""
 

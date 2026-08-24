@@ -33,6 +33,15 @@ jobs:
         with:
           ref: main
 
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
       - name: Restore any non-authoritative vertical
         env:
           GH_TOKEN: ${{ github.token }}
@@ -52,11 +61,14 @@ jobs:
           }
 
           dispatch_if_stale() {
-            local authority_file="$1"
+            local vertical="$1"
             local workflow="$2"
             local label="$3"
+            local decision
 
-            if jq -e '.authoritative == true and .status == "authoritative"' "$authority_file" >/dev/null; then
+            decision=$(PYTHONPATH=src python -m airfryer_rankings.ops authority-decision \
+              --vertical "$vertical" --recovery)
+            if [ "$decision" = "noop" ]; then
               echo "$label authority is current."
               return
             fi
@@ -70,5 +82,5 @@ jobs:
             gh workflow run "$workflow" --repo "$GITHUB_REPOSITORY" --ref main -f mode=daily
           }
 
-          dispatch_if_stale docs/api/authority.json hourly.yml 'Air Fryer'
-          dispatch_if_stale verticals/slow_cooker/docs/api/authority.json slow-cooker.yml 'Slow Cooker'
+          dispatch_if_stale air-fryer hourly.yml 'Air Fryer'
+          dispatch_if_stale slow-cooker slow-cooker.yml 'Slow Cooker'
