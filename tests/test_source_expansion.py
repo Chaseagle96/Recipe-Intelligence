@@ -201,6 +201,33 @@ def test_recipe_structure_is_recognized_without_rating_evidence() -> None:
     assert page.editorial_link
 
 
+def test_recipe_structure_accepts_microdata_layout() -> None:
+    html = """
+    <article itemscope itemtype="https://schema.org/Recipe">
+      <meta itemprop="name" content="Air Fryer Tofu">
+      <span itemprop="recipeIngredient">tofu</span>
+      <span itemprop="recipeIngredient">oil</span>
+      <span itemprop="recipeIngredient">salt</span>
+      <div itemprop="recipeInstructions">Air fry until crisp.</div>
+      <div itemprop="aggregateRating" itemscope itemtype="https://schema.org/AggregateRating">
+        <meta itemprop="ratingValue" content="4.7">
+        <meta itemprop="reviewCount" content="80">
+      </div>
+    </article>
+    """
+    page = analyze_recipe_page(
+        html,
+        url="https://publisher.example/air-fryer-tofu",
+        final_url="https://publisher.example/air-fryer-tofu",
+        domain="publisher.example",
+        include_pattern=r"air[- ]?fry(?:er|ing)",
+    )
+    assert page.is_recipe
+    assert page.vertical_relevant
+    assert page.has_rating
+    assert page.ranking_extractable
+
+
 def test_rating_mismatch_is_exposed_as_conflict() -> None:
     html = """
     <html><head><script type="application/ld+json">

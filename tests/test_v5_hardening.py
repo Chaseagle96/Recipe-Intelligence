@@ -72,11 +72,15 @@ def test_checked_in_evidence_labels_are_measurable_but_not_prematurely_calibrate
     assert calibration["schema_only"]["ready"] is False
 
 
-def test_structural_fingerprints_change_when_rating_schema_contract_changes():
+def test_structural_fingerprints_normalize_equivalent_rating_schema_aliases():
     first = '<html><body><span itemprop="ratingCount"></span><script type="application/ld+json">{"@type":"Recipe","aggregateRating":{"ratingValue":4.8,"ratingCount":10}}</script></body></html>'
     second = '<html><body><span itemprop="reviewCount"></span><script type="application/ld+json">{"@type":"Recipe","aggregateRating":{"ratingValue":4.8,"reviewCount":10}}</script></body></html>'
-    assert dom_structure_fingerprint(first) != dom_structure_fingerprint(second)
-    assert schema_signature(first) != schema_signature(second)
+    assert dom_structure_fingerprint(first) == dom_structure_fingerprint(second)
+    assert schema_signature(first) == schema_signature(second)
+
+    without_rating = '<html><body><span itemprop="ratingValue"></span><script type="application/ld+json">{"@type":"Recipe","name":"A"}</script></body></html>'
+    assert dom_structure_fingerprint(first) != dom_structure_fingerprint(without_rating)
+    assert schema_signature(first) != schema_signature(without_rating)
 
 
 def test_structural_fingerprints_ignore_layout_and_jsonld_order():
@@ -163,6 +167,52 @@ def test_publication_gate_fails_closed_on_catastrophic_corpus_loss():
     )
     assert result["passed"] is False
     assert any("retained only" in failure for failure in result["failures"])
+
+
+def test_publication_gate_tolerates_layout_variance_when_extraction_is_preserved():
+    ranked = [{"recipe_id": f"r{index}"} for index in range(100)]
+    result = evaluate_publish_gate(
+        {"ranked_recipes": 100, "model_version": 5, "deduplicated_count": 2},
+        ranked[:50],
+        ranked,
+        {
+            "crawl_targets": 100,
+            "dom_structure_changes": 0,
+            "dom_structure_breaks": 0,
+            "dom_structure_variances": 80,
+            "evidence_conflict_rate": 0.0,
+            "legacy_evidence_pending": 0,
+            "http_429": 0,
+        },
+        mode="hourly",
+        model_version=5,
+        deduplicated_count=2,
+    )
+    assert result["passed"] is True
+    assert any("tolerated layout variance" in warning for warning in result["warnings"])
+
+
+def test_publication_gate_still_fails_when_layout_change_breaks_extraction():
+    ranked = [{"recipe_id": f"r{index}"} for index in range(100)]
+    result = evaluate_publish_gate(
+        {"ranked_recipes": 100, "model_version": 5, "deduplicated_count": 2},
+        ranked[:50],
+        ranked,
+        {
+            "crawl_targets": 100,
+            "dom_structure_changes": 50,
+            "dom_structure_breaks": 50,
+            "dom_structure_variances": 0,
+            "evidence_conflict_rate": 0.0,
+            "legacy_evidence_pending": 0,
+            "http_429": 0,
+        },
+        mode="hourly",
+        model_version=5,
+        deduplicated_count=2,
+    )
+    assert result["passed"] is False
+    assert any("broke extraction" in failure for failure in result["failures"])
 
 
 def test_history_archive_health_and_parquet_export(tmp_path: Path):

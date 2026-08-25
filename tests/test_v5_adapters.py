@@ -185,7 +185,7 @@ def test_discovery_reports_sitemap_failure_as_degraded(monkeypatch):
     assert result["discovery_errors"] == ["https://example.com/broken.xml:Timeout"]
 
 
-def test_crawler_reuses_304_and_detects_structural_changes(monkeypatch):
+def test_crawler_reuses_304_and_tolerates_structural_variance(monkeypatch):
     monkeypatch.setattr(crawler, "make_session", FakeSession)
     monkeypatch.setattr(crawler, "robots_and_sitemaps", lambda session, cfg: (FakeParser(), [], "", "ok"))
     existing = asdict(sample_row())
@@ -242,9 +242,11 @@ def test_crawler_reuses_304_and_detects_structural_changes(monkeypatch):
     assert len(rows) == 2
     assert coverage[0]["not_modified"] == 1
     assert coverage[0]["recognized_recipes"] == 2
-    assert coverage[0]["dom_structure_changes"] == 1
-    assert coverage[0]["schema_structure_changes"] == 1
-    assert {event["type"] for event in events} >= {"dom_structure_changed", "schema_structure_changed"}
+    assert coverage[0]["dom_structure_changes"] == 0
+    assert coverage[0]["schema_structure_changes"] == 0
+    assert coverage[0]["dom_structure_variances"] == 1
+    assert coverage[0]["schema_structure_variances"] == 1
+    assert {event["type"] for event in events} >= {"dom_structure_variance", "schema_structure_variance"}
 
 
 def test_structure_versions_rebaseline_legacy_hashes_and_detect_removal():

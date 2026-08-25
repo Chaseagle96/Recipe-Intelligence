@@ -133,6 +133,30 @@ def test_relative_canonical_and_visible_only_extraction_fallback():
     assert meta["page_hash"]
 
 
+def test_extraction_accepts_schema_org_microdata_recipe_layout():
+    html = """
+    <article itemscope itemtype="https://schema.org/Recipe">
+      <meta itemprop="name" content="Microdata Air Fryer Potatoes">
+      <ul>
+        <li itemprop="recipeIngredient">potatoes</li>
+        <li itemprop="recipeIngredient">oil</li>
+        <li itemprop="recipeIngredient">salt</li>
+      </ul>
+      <div itemprop="recipeInstructions">Cook until crisp.</div>
+      <div itemprop="aggregateRating" itemscope itemtype="https://schema.org/AggregateRating">
+        <meta itemprop="ratingValue" content="4.8">
+        <meta itemprop="reviewCount" content="125">
+      </div>
+    </article>
+    """
+    row, meta = extract_recipe_from_html(html, "https://example.com/microdata", "example.com")
+    assert row is not None
+    assert row.title == "Microdata Air Fryer Potatoes"
+    assert row.rating_count == 125
+    assert row.extraction_method.startswith("microdata")
+    assert meta["recipe_recognized"] is True
+
+
 def test_extraction_rejects_malformed_structured_rating_scale():
     html = """
     <html><head><title>Bad Rating</title>

@@ -52,7 +52,7 @@ def test_gate_warns_on_degraded_crawl_and_dom_churn_without_blocking():
     )
     assert result["passed"] is True
     assert any("crawl success rate is degraded" in warning for warning in result["warnings"])
-    assert any("DOM structure changes elevated" in warning for warning in result["warnings"])
+    assert any("DOM structure changes broke extraction" in warning for warning in result["warnings"])
 
 
 def test_gate_fails_on_catastrophic_crawl_health():

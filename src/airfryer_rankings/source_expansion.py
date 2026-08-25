@@ -25,7 +25,7 @@ from .evidence import (
     _image_url,
     _instruction_texts,
     _parse_number,
-    jsonld_objects,
+    recipe_objects,
     visible_rating_evidence,
 )
 from .extract import extract_recipe_from_html
@@ -543,11 +543,7 @@ def _select_evenly(urls: list[str], count: int) -> list[str]:
 
 def _recipe_jsonld(soup: BeautifulSoup) -> dict[str, Any] | None:
     candidates: list[tuple[int, dict[str, Any]]] = []
-    for obj in jsonld_objects(soup):
-        typ = obj.get("@type")
-        types = typ if isinstance(typ, list) else [typ]
-        if not any(str(value).lower() == "recipe" for value in types if value is not None):
-            continue
+    for obj in recipe_objects(soup):
         ingredients = obj.get("recipeIngredient") or []
         instructions = _instruction_texts(obj)
         score = (

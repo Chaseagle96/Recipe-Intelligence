@@ -188,7 +188,11 @@ def crawl_targets(
             "http_403": 0,
             "http_429": 0,
             "dom_structure_changes": 0,
+            "dom_structure_variances": 0,
+            "dom_structure_breaks": 0,
             "schema_structure_changes": 0,
+            "schema_structure_variances": 0,
+            "schema_structure_breaks": 0,
             "legacy_backfill_targets": 0,
             "legacy_backfill_resolved": 0,
             "robots_status": robots_status,
@@ -198,6 +202,7 @@ def crawl_targets(
             url = target["url"]
             entry = catalog.setdefault(url, dict(target))
             cached_recipe = recipes.get(entry.get("recipe_id", ""), {})
+            previously_extractable = bool(cached_recipe) or entry.get("last_status") == "ok"
             force_evidence_refresh = bool(
                 cached_recipe.get("needs_evidence_backfill")
                 or cached_recipe.get("evidence_status") == "legacy_unverified"
@@ -244,14 +249,14 @@ def crawl_targets(
                 page_hash = parse_meta.get("page_hash", "")
                 dom_fingerprint = parse_meta.get("dom_fingerprint", "")
                 dom_fingerprint_version = parse_meta.get("dom_fingerprint_version")
+                dom_structure_contract = parse_meta.get("dom_structure_contract", {})
                 schema_signature = parse_meta.get("schema_signature", "")
                 schema_signature_version = parse_meta.get("schema_signature_version")
                 content_changed = bool(entry.get("page_hash") and page_hash and entry.get("page_hash") != page_hash)
                 dom_changed = _versioned_structure_changed(entry, parse_meta, "dom_fingerprint")
                 schema_changed = _versioned_structure_changed(entry, parse_meta, "schema_signature")
-                priority = (
-                    "contract_changed" if dom_changed or schema_changed else "changed" if content_changed else "stable"
-                )
+                structure_break = bool((dom_changed or schema_changed) and previously_extractable and row is None)
+                priority = "contract_changed" if structure_break else "changed" if content_changed else "stable"
                 entry_status = "ok" if row else "recognized_no_verified_rating" if recognized else "no_verified_rating"
                 entry.update(
                     {
@@ -262,6 +267,7 @@ def crawl_targets(
                         "page_hash": page_hash,
                         "dom_fingerprint": dom_fingerprint,
                         "dom_fingerprint_version": dom_fingerprint_version,
+                        "dom_structure_contract": dom_structure_contract,
                         "schema_signature": schema_signature,
                         "schema_signature_version": schema_signature_version,
                         "priority": priority,
@@ -272,13 +278,51 @@ def crawl_targets(
                 if content_changed:
                     entry["last_changed"] = run_at
                 if dom_changed:
-                    metrics["dom_structure_changes"] += 1
-                    events.append({"type": "dom_structure_changed", "source": domain, "url": url, "timestamp": run_at})
+                    if structure_break:
+                        metrics["dom_structure_changes"] += 1
+                        metrics["dom_structure_breaks"] += 1
+                        events.append(
+                            {
+                                "type": "dom_structure_changed",
+                                "source": domain,
+                                "url": url,
+                                "timestamp": run_at,
+                            }
+                        )
+                    else:
+                        metrics["dom_structure_variances"] += 1
+                        events.append(
+                            {
+                                "type": "dom_structure_variance",
+                                "source": domain,
+                                "url": url,
+                                "timestamp": run_at,
+                                "extraction_preserved": bool(row),
+                            }
+                        )
                 if schema_changed:
-                    metrics["schema_structure_changes"] += 1
-                    events.append(
-                        {"type": "schema_structure_changed", "source": domain, "url": url, "timestamp": run_at}
-                    )
+                    if structure_break:
+                        metrics["schema_structure_changes"] += 1
+                        metrics["schema_structure_breaks"] += 1
+                        events.append(
+                            {
+                                "type": "schema_structure_changed",
+                                "source": domain,
+                                "url": url,
+                                "timestamp": run_at,
+                            }
+                        )
+                    else:
+                        metrics["schema_structure_variances"] += 1
+                        events.append(
+                            {
+                                "type": "schema_structure_variance",
+                                "source": domain,
+                                "url": url,
+                                "timestamp": run_at,
+                                "extraction_preserved": bool(row),
+                            }
+                        )
                 for issue in parse_meta.get("issues", []):
                     events.append({"type": issue, "source": domain, "url": url, "timestamp": run_at})
                 if row:

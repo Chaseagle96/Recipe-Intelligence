@@ -92,7 +92,11 @@ def build_pipeline_metrics(
         "sources_stale_24h": sum(1 for row in source_health if not row.get("checked_within_24h")),
         "sources_stale_7d": sum(1 for row in source_health if not row.get("checked_within_7d")),
         "dom_structure_changes": sum(int(row.get("dom_structure_changes", 0) or 0) for row in coverage),
+        "dom_structure_breaks": sum(int(row.get("dom_structure_breaks", 0) or 0) for row in coverage),
+        "dom_structure_variances": sum(int(row.get("dom_structure_variances", 0) or 0) for row in coverage),
         "schema_structure_changes": sum(int(row.get("schema_structure_changes", 0) or 0) for row in coverage),
+        "schema_structure_breaks": sum(int(row.get("schema_structure_breaks", 0) or 0) for row in coverage),
+        "schema_structure_variances": sum(int(row.get("schema_structure_variances", 0) or 0) for row in coverage),
     }
     metric_rows = [
         {"metric": key, "value": value, "generated_at": run_at}
@@ -131,12 +135,34 @@ def build_pipeline_metrics(
                 "timestamp": run_at,
             }
         )
+    if metrics["dom_structure_variances"]:
+        alerts.append(
+            {
+                "type": "publisher_dom_variance_tolerated",
+                "metric": "dom_structure_variances",
+                "value": metrics["dom_structure_variances"],
+                "threshold": 0,
+                "direction": "above",
+                "timestamp": run_at,
+            }
+        )
     if metrics["schema_structure_changes"]:
         alerts.append(
             {
                 "type": "publisher_schema_contract_changes",
                 "metric": "schema_structure_changes",
                 "value": metrics["schema_structure_changes"],
+                "threshold": 0,
+                "direction": "above",
+                "timestamp": run_at,
+            }
+        )
+    if metrics["schema_structure_variances"]:
+        alerts.append(
+            {
+                "type": "publisher_schema_variance_tolerated",
+                "metric": "schema_structure_variances",
+                "value": metrics["schema_structure_variances"],
                 "threshold": 0,
                 "direction": "above",
                 "timestamp": run_at,

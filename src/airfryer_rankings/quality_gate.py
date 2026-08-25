@@ -172,8 +172,12 @@ def evaluate_publish_gate(
             warnings.append(f"ranking eligibility rate is degraded at {value:.1%}")
 
     crawl_targets = max(1, int(metrics.get("crawl_targets") or 0))
-    dom_changes = int(metrics.get("dom_structure_changes") or 0)
-    details["dom_structure_changes"] = dom_changes
+    raw_dom_breaks = metrics.get("dom_structure_breaks")
+    dom_breaks = int(raw_dom_breaks if raw_dom_breaks is not None else metrics.get("dom_structure_changes") or 0)
+    dom_variances = int(metrics.get("dom_structure_variances") or 0)
+    details["dom_structure_changes"] = dom_breaks
+    details["dom_structure_breaks"] = dom_breaks
+    details["dom_structure_variances"] = dom_variances
     details["crawl_targets"] = crawl_targets
     dom_warn = max(
         int(thresholds["dom_structure_change_warn_min"]),
@@ -183,10 +187,12 @@ def evaluate_publish_gate(
         int(thresholds["dom_structure_change_fail_min"]),
         int(crawl_targets * float(thresholds["dom_structure_change_fail_fraction"])),
     )
-    if dom_changes >= dom_fail:
-        failures.append(f"DOM structure changes spiked to {dom_changes} across {crawl_targets} crawl targets")
-    elif dom_changes >= dom_warn:
-        warnings.append(f"DOM structure changes elevated at {dom_changes} across {crawl_targets} crawl targets")
+    if dom_breaks >= dom_fail:
+        failures.append(f"DOM structure changes broke extraction on {dom_breaks} across {crawl_targets} crawl targets")
+    elif dom_breaks >= dom_warn:
+        warnings.append(f"DOM structure changes broke extraction on {dom_breaks} across {crawl_targets} crawl targets")
+    if dom_variances:
+        warnings.append(f"tolerated layout variance on {dom_variances} crawl targets with recipe extraction preserved")
 
     anomaly_count = int(metrics.get("anomalies") or 0)
     details["anomalies"] = anomaly_count

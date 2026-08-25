@@ -12,7 +12,7 @@ from .evidence import (
     _instruction_texts,
     _parse_histogram,
     _parse_number,
-    jsonld_objects,
+    recipe_objects,
     visible_rating_evidence,
 )
 from .models import (
@@ -45,11 +45,7 @@ def extract_recipe_from_html(
     parse_meta = {"issues": [], "page_hash": page_hash, "recipe_recognized": False, **structural}
     candidates: list[RecipeRow] = []
 
-    for obj in jsonld_objects(soup):
-        typ = obj.get("@type")
-        types = typ if isinstance(typ, list) else [typ]
-        if not any(str(value).lower() == "recipe" for value in types if value is not None):
-            continue
+    for obj in recipe_objects(soup):
         # Recognizing a Recipe schema is a successful structural extraction even
         # when the publisher does not expose public aggregate rating evidence.
         # Ranking eligibility is tracked separately by whether a RecipeRow can
@@ -72,7 +68,14 @@ def extract_recipe_from_html(
         visible_normalized = None
         if visible_rating is not None:
             visible_normalized = visible_rating if visible_rating <= 5.05 else visible_rating / best * 5.0
-        confidence, evidence_status, method = _evidence_score(normalized, count, visible_normalized, visible_count)
+        extraction_method = str(obj.get("__extraction_method") or "jsonld")
+        confidence, evidence_status, method = _evidence_score(
+            normalized,
+            count,
+            visible_normalized,
+            visible_count,
+            extraction_method,
+        )
         histogram = _parse_histogram(aggregate)
         if evidence_status == "conflict":
             parse_meta["issues"].append("rating_evidence_conflict")

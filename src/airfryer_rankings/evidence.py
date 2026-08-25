@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import json
-from typing import Iterator
+from typing import Any, Iterator
 from urllib.parse import urljoin
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from .models import NUMBER_RE, SourceConfig
 
@@ -33,6 +33,77 @@ def jsonld_objects(soup: BeautifulSoup) -> Iterator[dict]:
                     stack.extend(main if isinstance(main, list) else [main])
             elif isinstance(item, list):
                 stack.extend(item)
+
+
+def _schema_type_name(value: Any) -> str:
+    text = str(value or "").strip().rstrip("/")
+    return text.rsplit("/", 1)[-1].rsplit("#", 1)[-1].lower()
+
+
+def _is_recipe_object(obj: dict) -> bool:
+    raw_type = obj.get("@type")
+    types = raw_type if isinstance(raw_type, list) else [raw_type]
+    return any(_schema_type_name(value) == "recipe" for value in types if value is not None)
+
+
+def _itemprop_nodes(scope: Tag) -> Iterator[Tag]:
+    for node in scope.find_all(itemprop=True):
+        if node.find_parent(itemscope=True) is scope:
+            yield node
+
+
+def _item_value(node: Tag) -> str:
+    for attribute in ("content", "datetime", "value", "href", "src"):
+        value = node.get(attribute)
+        if value:
+            return str(value).strip()
+    return node.get_text(" ", strip=True)
+
+
+def _microdata_object(scope: Tag) -> dict:
+    payload: dict[str, Any] = {"@type": "Recipe", "__extraction_method": "microdata"}
+    raw_type = scope.get("itemtype")
+    if raw_type:
+        types = raw_type if isinstance(raw_type, list) else str(raw_type).split()
+        payload["@type"] = next(
+            (_schema_type_name(value).title() for value in types if _schema_type_name(value)),
+            "Recipe",
+        )
+    for node in _itemprop_nodes(scope):
+        raw_props = node.get("itemprop")
+        props = raw_props if isinstance(raw_props, list) else str(raw_props).split()
+        value: Any = _microdata_object(node) if node.has_attr("itemscope") else _item_value(node)
+        for prop in props:
+            if prop in payload:
+                previous = payload[prop]
+                payload[prop] = previous + [value] if isinstance(previous, list) else [previous, value]
+            else:
+                payload[prop] = value
+    return payload
+
+
+def microdata_recipe_objects(soup: BeautifulSoup) -> Iterator[dict]:
+    """Yield Schema.org Recipe objects represented with HTML Microdata."""
+    for scope in soup.find_all(itemscope=True):
+        if scope.find_parent(itemscope=True):
+            continue
+        raw_type = scope.get("itemtype")
+        types = raw_type if isinstance(raw_type, list) else str(raw_type or "").split()
+        if any(_schema_type_name(value) == "recipe" for value in types):
+            yield _microdata_object(scope)
+
+
+def recipe_objects(soup: BeautifulSoup) -> Iterator[dict]:
+    """Yield deduplicated Recipe objects from JSON-LD and HTML Microdata."""
+    seen: set[str] = set()
+    for obj in list(jsonld_objects(soup)) + list(microdata_recipe_objects(soup)):
+        if not _is_recipe_object(obj):
+            continue
+        key = json.dumps(obj, sort_keys=True, default=str, separators=(",", ":"))
+        if key in seen:
+            continue
+        seen.add(key)
+        yield obj
 
 
 def _author_name(obj: dict) -> str:
@@ -168,17 +239,18 @@ def _evidence_score(
     schema_count: int,
     visible_rating: float | None,
     visible_count: int | None,
+    method: str = "jsonld",
 ) -> tuple[float, str, str]:
     if visible_rating is None and visible_count is None:
         # Structured publisher metadata is useful but is only one evidence channel.
         # Keep it rankable while assigning the same confidence tier as visible-only
         # evidence; dual-channel agreement remains the strongest signal.
-        return SCHEMA_ONLY_CONFIDENCE, "schema_only", "jsonld"
+        return SCHEMA_ONLY_CONFIDENCE, "schema_only", method
     rating_ok = visible_rating is None or abs(schema_rating - visible_rating) <= 0.08
     count_ok = visible_count is None or abs(schema_count - visible_count) <= max(5, int(schema_count * 0.08))
     if rating_ok and count_ok:
-        return 1.0, "verified", "jsonld+visible"
-    return 0.25, "conflict", "jsonld+visible"
+        return 1.0, "verified", f"{method}+visible"
+    return 0.25, "conflict", f"{method}+visible"
 
 
 def _canonical_url(soup: BeautifulSoup, fallback: str) -> str:
