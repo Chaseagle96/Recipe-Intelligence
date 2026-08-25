@@ -69,7 +69,9 @@ def _merge_catalog_entries(existing: dict[str, Any], incoming: dict[str, Any], n
 
     existing_checked = parse_dt(str(existing.get("last_checked") or ""))
     incoming_checked = parse_dt(str(incoming.get("last_checked") or ""))
-    preferred = incoming if incoming_checked and (not existing_checked or incoming_checked >= existing_checked) else existing
+    preferred = (
+        incoming if incoming_checked and (not existing_checked or incoming_checked >= existing_checked) else existing
+    )
     other = existing if preferred is incoming else incoming
     merged = dict(other)
     merged.update(preferred)

@@ -7,19 +7,41 @@ from typing import Any
 from bs4 import BeautifulSoup
 
 STRUCTURAL_ATTRIBUTES = ("itemprop", "itemtype", "itemscope", "type", "rel")
+DOM_FINGERPRINT_VERSION = 2
+SCHEMA_SIGNATURE_VERSION = 2
 
 
 def _jsonld_shape(value: Any) -> Any:
     if isinstance(value, dict):
-        return {key: _jsonld_shape(value[key]) for key in sorted(value) if key in {
-            "@type", "aggregateRating", "ratingValue", "ratingCount", "reviewCount", "bestRating",
-            "recipeIngredient", "recipeInstructions", "author", "image", "name",
-        }}
+        return {
+            key: _jsonld_shape(value[key])
+            for key in sorted(value)
+            if key
+            in {
+                "@type",
+                "aggregateRating",
+                "ratingValue",
+                "ratingCount",
+                "reviewCount",
+                "bestRating",
+                "recipeIngredient",
+                "recipeInstructions",
+                "author",
+                "image",
+                "name",
+            }
+        }
     if isinstance(value, list):
-        if not value:
-            return []
-        return [_jsonld_shape(value[0])]
+        shapes = {}
+        for item in value:
+            shape = _jsonld_shape(item)
+            shapes[_canonical_shape(shape)] = shape
+        return [shapes[key] for key in sorted(shapes)]
     return type(value).__name__
+
+
+def _canonical_shape(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
 
 
 def dom_structure_fingerprint(html: str) -> str:
@@ -34,7 +56,8 @@ def dom_structure_fingerprint(html: str) -> str:
             if isinstance(value, list):
                 value = "|".join(sorted(str(item) for item in value))
             attrs.append(f"{name}={value}")
-        tokens.append(f"{tag.name}[{';'.join(attrs)}]")
+        if attrs:
+            tokens.append(f"{tag.name}[{';'.join(attrs)}]")
     payload = "\n".join(tokens)
     return hashlib.sha256(payload.encode("utf-8", errors="ignore")).hexdigest()[:24]
 
@@ -51,7 +74,7 @@ def schema_signature(html: str) -> str:
         except Exception:
             continue
         shapes.append(_jsonld_shape(payload))
-    canonical = json.dumps(shapes, sort_keys=True, separators=(",", ":"))
+    canonical = json.dumps(sorted({_canonical_shape(shape) for shape in shapes}), separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:24] if shapes else ""
 
 
@@ -71,6 +94,8 @@ def rating_evidence_signature(html: str) -> dict[str, int | bool]:
 def structure_metadata(html: str) -> dict:
     return {
         "dom_fingerprint": dom_structure_fingerprint(html),
+        "dom_fingerprint_version": DOM_FINGERPRINT_VERSION,
         "schema_signature": schema_signature(html),
+        "schema_signature_version": SCHEMA_SIGNATURE_VERSION,
         "rating_evidence_signature": rating_evidence_signature(html),
     }

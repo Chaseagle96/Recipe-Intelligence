@@ -12,10 +12,12 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Resolve and validate version
@@ -54,8 +56,20 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
         shell: bash
         run: |
+          existing_target=''
+          if git rev-parse --verify --quiet "$TAG^{commit}" >/dev/null; then
+            existing_target="$(git rev-parse "$TAG^{commit}")"
+            if [ "$existing_target" != "$GITHUB_SHA" ]; then
+              echo "Tag $TAG targets $existing_target, expected $GITHUB_SHA." >&2
+              exit 1
+            fi
+          fi
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists."
+            if [ -z "$existing_target" ]; then
+              echo "Release $TAG exists, but its tag is unavailable after a full tag fetch." >&2
+              exit 1
+            fi
+            echo "Release $TAG already exists at expected commit $GITHUB_SHA."
             exit 0
           fi
           gh release create "$TAG" \

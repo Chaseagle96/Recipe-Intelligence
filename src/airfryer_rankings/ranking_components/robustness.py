@@ -9,7 +9,9 @@ from .scoring import score_current
 
 
 def spearman(base: dict[str, int], other: dict[str, int], recipe_ids: list[str]) -> float | None:
-    pairs = [(base[recipe_id], other[recipe_id]) for recipe_id in recipe_ids if recipe_id in base and recipe_id in other]
+    pairs = [
+        (base[recipe_id], other[recipe_id]) for recipe_id in recipe_ids if recipe_id in base and recipe_id in other
+    ]
     if len(pairs) < 2:
         return None
     xs = [left for left, _ in pairs]
@@ -78,9 +80,13 @@ def robustness_lab(
                             "uncertainty_cap": uncertainty_cap,
                             "spearman_top200": spearman(base_positions, simulated_positions, top200_ids),
                             "kendall_top100": kendall(base_positions, simulated_positions, top100_ids),
-                            "top10_overlap": len(set(top200_ids[:10]) & {rid for rid, rank in simulated_positions.items() if rank <= 10})
+                            "top10_overlap": len(
+                                set(top200_ids[:10]) & {rid for rid, rank in simulated_positions.items() if rank <= 10}
+                            )
                             / 10.0,
-                            "top50_overlap": len(set(top200_ids[:50]) & {rid for rid, rank in simulated_positions.items() if rank <= 50})
+                            "top50_overlap": len(
+                                set(top200_ids[:50]) & {rid for rid, rank in simulated_positions.items() if rank <= 50}
+                            )
                             / 50.0,
                         }
                     )

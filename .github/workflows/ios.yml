@@ -25,19 +25,21 @@ permissions:
 
 jobs:
   build-and-test:
-    runs-on: xcode-27
+    runs-on: macos-26
     timeout-minutes: 45
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Show Xcode environment
         run: |
           XCODE_VERSION="$(xcodebuild -version | head -n 1)"
           echo "$XCODE_VERSION"
           case "$XCODE_VERSION" in
-            "Xcode 27"*) ;;
-            *) echo "Expected Xcode 27 runner, got: $XCODE_VERSION" >&2; exit 1 ;;
+            "Xcode 26"*) ;;
+            *) echo "Expected Xcode 26 runner, got: $XCODE_VERSION" >&2; exit 1 ;;
           esac
           xcodebuild -project ios/RecipeIntelligence.xcodeproj -list
 
@@ -71,14 +73,16 @@ jobs:
           PY
 
       - name: Run unit and UI tests
+        env:
+          SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
         run: |
           set -o pipefail
-          xcrun simctl boot "${{ steps.simulator.outputs.udid }}" || true
+          xcrun simctl boot "$SIMULATOR_UDID" || true
           xcodebuild \
             -project ios/RecipeIntelligence.xcodeproj \
             -scheme RecipeIntelligence \
             -configuration Debug \
-            -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}" \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
             CODE_SIGNING_ALLOWED=NO \
             test
 
@@ -116,7 +120,7 @@ jobs:
           echo "IPA size: $(du -h ios/RecipeIntelligence.ipa | cut -f1)"
 
       - name: Upload unsigned IPA
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: RecipeIntelligence-unsigned-ipa
           retention-days: 30

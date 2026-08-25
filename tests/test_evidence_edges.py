@@ -95,7 +95,9 @@ def test_visible_evidence_selectors_microdata_and_evidence_scoring():
         """,
         "lxml",
     )
-    rating, count = visible_rating_evidence(soup, SourceConfig("example.com", rating_selector=".score", count_selector=".count"))
+    rating, count = visible_rating_evidence(
+        soup, SourceConfig("example.com", rating_selector=".score", count_selector=".count")
+    )
     assert rating == 4.82
     assert count == 321
 
@@ -112,7 +114,10 @@ def test_visible_evidence_selectors_microdata_and_evidence_scoring():
 def test_relative_canonical_and_visible_only_extraction_fallback():
     soup = BeautifulSoup('<link rel="canonical" href="/recipe/test">', "lxml")
     assert _canonical_url(soup, "https://example.com/original") == "https://example.com/recipe/test"
-    assert _canonical_url(BeautifulSoup("<html></html>", "lxml"), "https://example.com/fallback") == "https://example.com/fallback"
+    assert (
+        _canonical_url(BeautifulSoup("<html></html>", "lxml"), "https://example.com/fallback")
+        == "https://example.com/fallback"
+    )
 
     html = """
     <html><head><title>Visible Air Fryer Test</title></head><body>

@@ -1,6 +1,7 @@
 name: Recipe Intelligence Authority Postcheck
 
 on:
+  # zizmor: ignore[dangerous-triggers] workflow_run is gated to successful same-repository main pushes below.
   workflow_run:
     workflows:
       - Recipe Intelligence
@@ -18,28 +19,33 @@ on:
           - slow_cooker
 
 permissions:
-  contents: write
-
-concurrency:
-  group: recipe-intelligence-authority-publish-main
-  cancel-in-progress: false
+  contents: read
 
 jobs:
   certify:
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event != 'pull_request' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: write
+    concurrency:
+      group: recipe-intelligence-${{ github.event_name == 'workflow_dispatch' && inputs.vertical == 'slow_cooker' && 'slow-cooker' || github.event_name == 'workflow_run' && github.event.workflow_run.name == 'Recipe Intelligence — Slow Cooker' && 'slow-cooker' || 'air-fryer' }}-state
+      cancel-in-progress: false
     steps:
       - name: Checkout current production state
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
           ref: main
 
       - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.12'
           cache: pip
@@ -49,11 +55,15 @@ jobs:
 
       - name: Resolve vertical
         id: vertical
+        env:
+          INPUT_VERTICAL: ${{ inputs.vertical }}
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
         shell: bash
         run: |
-          vertical="${{ inputs.vertical }}"
-          if [ "${{ github.event_name }}" = "workflow_run" ]; then
-            case "${{ github.event.workflow_run.name }}" in
+          vertical="$INPUT_VERTICAL"
+          if [ "$EVENT_NAME" = "workflow_run" ]; then
+            case "$WORKFLOW_NAME" in
               "Recipe Intelligence") vertical=air_fryer ;;
               "Recipe Intelligence — Slow Cooker") vertical=slow_cooker ;;
               *) echo 'Unsupported ranking workflow'; exit 1 ;;
@@ -65,45 +75,22 @@ jobs:
       - name: Check whether current main still matches completed ranking
         id: freshness
         if: github.event_name == 'workflow_run'
-        shell: bash
         env:
           VERTICAL: ${{ steps.vertical.outputs.vertical }}
+        shell: bash
         run: |
-          PYTHONPATH=src python - <<'PY'
-          import json
-          import os
-          from datetime import datetime
-          from pathlib import Path
-
-          vertical = os.environ['VERTICAL']
-          if vertical == 'air_fryer':
-              state_path = Path('data/state.json')
-              summary_path = Path('output/summary.json')
-              metrics_path = Path('output/source_expansion.json')
-          else:
-              state_path = Path('verticals/slow_cooker/data/state.json')
-              summary_path = Path('verticals/slow_cooker/output/summary.json')
-              metrics_path = Path('verticals/slow_cooker/output/source_expansion.json')
-
-          state = json.loads(state_path.read_text(encoding='utf-8'))
-          summary = json.loads(summary_path.read_text(encoding='utf-8'))
-          metrics = json.loads(metrics_path.read_text(encoding='utf-8'))
-          current_catalog = len(state.get('url_catalog', {}) or {})
-          summary_catalog = int(summary.get('catalog_urls') or 0)
-
-          def dt(value):
-              return datetime.fromisoformat(str(value).replace('Z', '+00:00')) if value else None
-
-          ranking_at = dt(summary.get('generated_at'))
-          catalog_sync_at = dt(metrics.get('catalog_sync_generated_at'))
-          current = summary_catalog == current_catalog and ranking_at is not None and catalog_sync_at is not None and ranking_at >= catalog_sync_at
-          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
-              output.write(f"current={'true' if current else 'false'}\n")
-          if current:
-              print(f'Current main still matches completed {vertical} ranking generation.')
-          else:
-              print(f'::notice::Skipping stale postcheck for {vertical}: summary catalog={summary_catalog}, current catalog={current_catalog}, ranking_at={ranking_at}, catalog_sync_at={catalog_sync_at}. A newer source/catalog generation already advanced main.')
-          PY
+          result="$(PYTHONPATH=src python -m airfryer_rankings.ops authority-decision \
+            --vertical "$VERTICAL")"
+          printf '%s\n' "$result"
+          decision="$(jq -r '.decision' <<<"$result")"
+          ranking_current="$(jq -r '.ranking_current' <<<"$result")"
+          if [ "$decision" = "noop" ]; then
+            echo 'current=true' >> "$GITHUB_OUTPUT"
+            echo "Current main matches the completed $VERTICAL ranking generation."
+          else
+            echo 'current=false' >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping authority postcheck: decision=$decision ranking_current=$ranking_current. A newer source/catalog generation or incomplete refresh already advanced main."
+          fi
 
       - name: Certify Air Fryer serving generation
         if: >-
@@ -142,11 +129,13 @@ jobs:
       - name: Commit certified serving generation
         if: >-
           github.event_name == 'workflow_dispatch' || steps.freshness.outputs.current == 'true'
+        env:
+          VERTICAL: ${{ steps.vertical.outputs.vertical }}
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          if [ "${{ steps.vertical.outputs.vertical }}" = "air_fryer" ]; then
+          if [ "$VERTICAL" = "air_fryer" ]; then
             for file in output/summary.json output/authority.json docs/api/manifest.json docs/api/authority.json; do
               [ ! -e "$file" ] || git add "$file"
             done
@@ -163,6 +152,6 @@ jobs:
             echo 'Authority generation already certified.'
             exit 0
           fi
-          git commit -m "Certify ${{ steps.vertical.outputs.vertical }} ranking authority"
+          git commit -m "Certify $VERTICAL ranking authority"
           git pull --rebase origin main
           git push origin HEAD:main

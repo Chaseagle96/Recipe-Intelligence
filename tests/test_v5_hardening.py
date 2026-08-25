@@ -73,10 +73,17 @@ def test_checked_in_evidence_labels_are_measurable_but_not_prematurely_calibrate
 
 
 def test_structural_fingerprints_change_when_rating_schema_contract_changes():
-    first = '<html><body><script type="application/ld+json">{"@type":"Recipe","aggregateRating":{"ratingValue":4.8,"ratingCount":10}}</script></body></html>'
-    second = '<html><body><section><script type="application/ld+json">{"@type":"Recipe","aggregateRating":{"ratingValue":4.8,"reviewCount":10}}</script></section></body></html>'
+    first = '<html><body><span itemprop="ratingCount"></span><script type="application/ld+json">{"@type":"Recipe","aggregateRating":{"ratingValue":4.8,"ratingCount":10}}</script></body></html>'
+    second = '<html><body><span itemprop="reviewCount"></span><script type="application/ld+json">{"@type":"Recipe","aggregateRating":{"ratingValue":4.8,"reviewCount":10}}</script></body></html>'
     assert dom_structure_fingerprint(first) != dom_structure_fingerprint(second)
     assert schema_signature(first) != schema_signature(second)
+
+
+def test_structural_fingerprints_ignore_layout_and_jsonld_order():
+    first = '<main><div class="ad"></div><span itemprop="ratingValue"></span></main><script type="application/ld+json">[{"@type":"Recipe"},{"@type":"Person"}]</script>'
+    second = '<nav></nav><main><section><span itemprop="ratingValue"></span></section></main><script type="application/ld+json">[{"@type":"Person"},{"@type":"Recipe"}]</script>'
+    assert dom_structure_fingerprint(first) == dom_structure_fingerprint(second)
+    assert schema_signature(first) == schema_signature(second)
 
 
 def test_historical_backtest_refuses_short_history():

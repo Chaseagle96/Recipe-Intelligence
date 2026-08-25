@@ -62,7 +62,7 @@
   "catalog_urls_added_after_promotion": 0,
   "catalog_urls_coalesced": 0,
   "catalog_urls_rewritten": 0,
-  "effective_source_count": 45,
+  "effective_source_count": 49,
   "evaluations": [
     {
       "domain": "eatwell101.com",
@@ -114,7 +114,7 @@
     }
   ],
   "generated_at": "2026-08-23T12:01:27.472359+00:00",
-  "manual_source_count": 40,
+  "manual_source_count": 44,
   "median_source_quality_score": 0.0,
   "pinned_source_warnings": 0,
   "promotion_rate": 0.0,

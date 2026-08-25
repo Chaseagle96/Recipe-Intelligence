@@ -86,7 +86,10 @@ def duplicate_similarity(a: dict, b: dict) -> float:
     ingredient = _jaccard(_ingredient_set(a), _ingredient_set(b))
     instruction = _jaccard(_instruction_set(a), _instruction_set(b))
     instruction_simhash = _hex_hamming_similarity(a.get("instruction_simhash", ""), b.get("instruction_simhash", ""))
-    author_match = bool(normalize_text(a.get("author", "")) and normalize_text(a.get("author", "")) == normalize_text(b.get("author", "")))
+    author_match = bool(
+        normalize_text(a.get("author", ""))
+        and normalize_text(a.get("author", "")) == normalize_text(b.get("author", ""))
+    )
     perceptual_image = _hex_hamming_similarity(a.get("image_perceptual_hash", ""), b.get("image_perceptual_hash", ""))
     image_url_match = bool(a.get("image_fingerprint") and a.get("image_fingerprint") == b.get("image_fingerprint"))
 
@@ -110,7 +113,9 @@ def duplicate_similarity(a: dict, b: dict) -> float:
     strong_instruction = instruction_simhash is not None and instruction_simhash >= 0.88
     if ingredient is not None and not (title >= 0.88 and ingredient >= 0.62) and not (title >= 0.94 and strong_image):
         return min(score, DEDUPE_THRESHOLD - 0.01)
-    if ingredient is None and not (title >= 0.97 and (author_match or image_url_match or strong_image or strong_instruction)):
+    if ingredient is None and not (
+        title >= 0.97 and (author_match or image_url_match or strong_image or strong_instruction)
+    ):
         return min(score, DEDUPE_THRESHOLD - 0.01)
     return score
 
@@ -135,7 +140,9 @@ def _candidate_block_keys(recipe: dict) -> set[str]:
     return keys
 
 
-def candidate_duplicate_pairs(recipes: Iterable[dict], low: float = 0.72, high: float = 0.90, limit: int = 100) -> list[tuple[dict, dict, float]]:
+def candidate_duplicate_pairs(
+    recipes: Iterable[dict], low: float = 0.72, high: float = 0.90, limit: int = 100
+) -> list[tuple[dict, dict, float]]:
     recipes = [dict(x) for x in recipes]
     blocks: dict[str, list[int]] = defaultdict(list)
     for idx, recipe in enumerate(recipes):
@@ -147,7 +154,7 @@ def candidate_duplicate_pairs(recipes: Iterable[dict], low: float = 0.72, high: 
         if len(block) < 2 or len(block) > 100:
             continue
         for pos, left in enumerate(block):
-            for right in block[pos + 1:]:
+            for right in block[pos + 1 :]:
                 pair = (min(left, right), max(left, right))
                 if pair in seen:
                     continue
@@ -189,7 +196,7 @@ def dedupe_current(recipes: Iterable[dict], detailed: bool = False):
         if len(block) > 300:
             block = sorted(block, key=lambda i: int(recipes[i].get("rating_count", 0)), reverse=True)[:300]
         for pos, left in enumerate(block):
-            for right in block[pos + 1:]:
+            for right in block[pos + 1 :]:
                 pair = (min(left, right), max(left, right))
                 if pair in seen_pairs:
                     continue
@@ -208,12 +215,19 @@ def dedupe_current(recipes: Iterable[dict], detailed: bool = False):
     deduped = 0
     for indices in grouped_indices.values():
         group = [recipes[i] for i in indices]
-        representative = max(group, key=lambda x: (int(x.get("rating_count", 0)), float(x.get("evidence_confidence", 0))))
+        representative = max(
+            group, key=lambda x: (int(x.get("rating_count", 0)), float(x.get("evidence_confidence", 0)))
+        )
         confidence = 0.0
         if len(indices) > 1:
             for pos, left in enumerate(indices):
-                for right in indices[pos + 1:]:
-                    confidence = max(confidence, pair_confidence.get((min(left, right), max(left, right)), duplicate_similarity(recipes[left], recipes[right])))
+                for right in indices[pos + 1 :]:
+                    confidence = max(
+                        confidence,
+                        pair_confidence.get(
+                            (min(left, right), max(left, right)), duplicate_similarity(recipes[left], recipes[right])
+                        ),
+                    )
         item = dict(representative)
         sources = sorted({x.get("source", "") for x in group if x.get("source")})
         urls = sorted({x.get("canonical_url") or x.get("url", "") for x in group if x.get("url")})

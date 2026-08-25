@@ -111,7 +111,7 @@ def test_evidence_calibration_activates_only_after_review_threshold(tmp_path: Pa
         '<html><head><script type="application/ld+json">'
         '{"@type":"Recipe","name":"Air Fryer X","recipeIngredient":["chicken"],'
         '"aggregateRating":{"ratingValue":"4.8","ratingCount":"100","bestRating":"5"}}'
-        '</script></head><body></body></html>',
+        "</script></head><body></body></html>",
         encoding="utf-8",
     )
     labels = {
@@ -172,9 +172,7 @@ def test_reporting_writes_v5_csvs_and_workbook(tmp_path: Path):
             "rank_volatility": 0.5,
         }
     ]
-    observations = [
-        {"recipe_id": "a", "timestamp": "2026-08-18T20:00:00+00:00", "rating_count": 1000, "rating": 4.9}
-    ]
+    observations = [{"recipe_id": "a", "timestamp": "2026-08-18T20:00:00+00:00", "rating_count": 1000, "rating": 4.9}]
     output = tmp_path / "output"
     write_csv_outputs(
         output,

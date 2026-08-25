@@ -2,6 +2,13 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.json
+htmlcov/
 .DS_Store
-output/*.xlsx
-output/*.duckdb
+**/output/*.xlsx
+**/output/*.duckdb
+*.json.lock
+*.source-expansion.lock

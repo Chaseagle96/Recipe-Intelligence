@@ -30,6 +30,7 @@ from .evidence_calibration import apply_evidence_calibration, evaluate_evidence_
 from .media import enrich_ambiguous_perceptual_hashes
 from .model_config import load_model_config
 from .observability import build_pipeline_metrics
+from .persistence import atomic_write_json, exclusive_lock, load_json_object
 from .qa import temporal_anomalies
 from .quality_gate import (
     assert_publishable,
@@ -72,33 +73,16 @@ def _read_json(path: str | Path, fallback: dict | None = None) -> dict:
     target = Path(path)
     if not target.exists():
         return dict(fallback or {})
-    try:
-        payload = json.loads(target.read_text(encoding="utf-8"))
-        return payload if isinstance(payload, dict) else dict(fallback or {})
-    except Exception:
-        return dict(fallback or {})
+    return load_json_object(target)
 
 
 def _write_json(path: str | Path, payload: dict) -> str:
     target = Path(path)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
+    atomic_write_json(target, payload, default=str)
     return str(target)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Incremental air-fryer recipe ranking pipeline")
-    parser.add_argument("--sources", default="config/sources.yaml")
-    parser.add_argument("--state", default="data/state.json")
-    parser.add_argument("--model-config", default="config/model.yaml")
-    parser.add_argument("--storage-config", default="config/storage.yaml")
-    parser.add_argument("--slo-config", default="config/slo.yaml")
-    parser.add_argument("--mode", choices=("hourly", "daily", "deep", "smoke", "backfill"), default="hourly")
-    parser.add_argument("--max-urls", type=int, default=None, help="Per-source fetch cap override")
-    parser.add_argument("--hourly-limit", type=int, default=100, help="Global hourly refresh target cap")
-    parser.add_argument("--stale-days", type=int, default=14)
-    args = parser.parse_args()
-
+def _run(args: argparse.Namespace) -> None:
     for folder in (
         "data/observations",
         "data/anomalies",
@@ -222,6 +206,23 @@ def main() -> None:
     dedupe_benchmark, dedupe_benchmark_rows = evaluate_dedupe_benchmark("data/benchmarks/dedupe_pairs.json")
     dedupe_label_queue = build_dedupe_label_queue(list(state.get("recipes", {}).values()), limit=250)
 
+    model_version = int(method.get("model_version") or model_payload.get("model_version", 5))
+    model_semver = str(model_payload.get("model_semver") or f"{model_version}.0.0")
+    component_versions = model_payload.get("component_versions") or {}
+    quality_gate = evaluate_publish_gate(
+        previous_summary,
+        previous_rankings,
+        ranked,
+        pipeline_metrics,
+        mode=effective_mode,
+        model_version=model_version,
+        model_semver=model_semver,
+        deduplicated_count=int(method.get("deduplicated_count") or 0),
+        policy=quality_policy,
+    )
+    if effective_mode != "smoke":
+        assert_publishable(quality_gate)
+
     backtest_path = Path("data/model/backtest_latest.json")
     if effective_mode in {"daily", "deep"}:
         backtest = run_historical_backtest(all_observations, model_params, model_payload)
@@ -250,10 +251,6 @@ def main() -> None:
     history_archive = None
     if effective_mode == "deep":
         history_archive = write_history_parquet("output/history_archive.parquet", all_observations)
-
-    model_version = int(method.get("model_version") or model_payload.get("model_version", 5))
-    model_semver = str(model_payload.get("model_semver") or f"{model_version}.0.0")
-    component_versions = model_payload.get("component_versions") or {}
 
     observation_file = write_run_records("data/observations", observations, run_at)
     anomaly_file = write_run_records("data/anomalies", anomalies, run_at)
@@ -332,17 +329,6 @@ def main() -> None:
         "history_definition": "Immutable NDJSON is authoritative; DuckDB and Parquet are derived analytical/archival layers. Raw, clean, model, and serving contracts are independently versioned.",
     }
 
-    quality_gate = evaluate_publish_gate(
-        previous_summary,
-        previous_rankings,
-        ranked,
-        pipeline_metrics,
-        mode=effective_mode,
-        model_version=model_version,
-        model_semver=model_semver,
-        deduplicated_count=int(method.get("deduplicated_count") or 0),
-        policy=quality_policy,
-    )
     write_quality_gate("output/quality_gate.json", quality_gate)
     _write_json("output/pipeline_metrics.json", pipeline_metrics)
     contracts = contract_manifest()
@@ -439,11 +425,25 @@ def main() -> None:
         "source_adjustments": method.get("source_adjustments", {}),
         "category_baselines": method.get("category_baselines", {}),
     }
-    Path("output/summary.json").write_text(json.dumps(summary, indent=2, default=str) + "\n", encoding="utf-8")
+    atomic_write_json("output/summary.json", summary, default=str)
 
-    if effective_mode != "smoke":
-        assert_publishable(quality_gate)
     save_state(args.state, state)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Incremental air-fryer recipe ranking pipeline")
+    parser.add_argument("--sources", default="config/sources.yaml")
+    parser.add_argument("--state", default="data/state.json")
+    parser.add_argument("--model-config", default="config/model.yaml")
+    parser.add_argument("--storage-config", default="config/storage.yaml")
+    parser.add_argument("--slo-config", default="config/slo.yaml")
+    parser.add_argument("--mode", choices=("hourly", "daily", "deep", "smoke", "backfill"), default="hourly")
+    parser.add_argument("--max-urls", type=int, default=None, help="Per-source fetch cap override")
+    parser.add_argument("--hourly-limit", type=int, default=100, help="Global hourly refresh target cap")
+    parser.add_argument("--stale-days", type=int, default=14)
+    args = parser.parse_args()
+    with exclusive_lock(args.state):
+        _run(args)
 
 
 if __name__ == "__main__":

@@ -80,7 +80,7 @@ def test_recent_unverified_urls_are_deprioritized():
 
 
 def test_ratingless_jsonld_recipe_is_structurally_recognized():
-    html = '''
+    html = """
     <html><head>
       <script type="application/ld+json">
       {
@@ -92,7 +92,7 @@ def test_ratingless_jsonld_recipe_is_structurally_recognized():
       }
       </script>
     </head><body></body></html>
-    '''
+    """
     row, metadata = extract_recipe_from_html(
         html,
         "https://example.com/slow-cooker-soup",

@@ -224,11 +224,7 @@ def _registry_path_for_source_file(source_path: Path) -> Path | None:
     parent = target.parent
     if parent.name == "config" and target.name == "sources.yaml":
         return parent.parent / "data" / "source_registry.json"
-    if (
-        target.name == "sources.yaml"
-        and parent.parent.name == "verticals"
-        and parent.parent.parent.name == "config"
-    ):
+    if target.name == "sources.yaml" and parent.parent.name == "verticals" and parent.parent.parent.name == "config":
         repo_root = parent.parent.parent.parent
         return repo_root / "verticals" / parent.name / "data" / "source_registry.json"
     return None
@@ -252,7 +248,9 @@ def load_sources(path: str | Path, *, include_discovered: bool = True) -> list[S
                 discovery_urls=tuple(item.get("discovery_urls", []) or []),
                 rating_selector=str(item.get("rating_selector", "") or ""),
                 count_selector=str(item.get("count_selector", "") or ""),
-                include_pattern=str(item.get("include_pattern", defaults.get("include_pattern", AIR_FRYER_PATTERN)) or AIR_FRYER_PATTERN),
+                include_pattern=str(
+                    item.get("include_pattern", defaults.get("include_pattern", AIR_FRYER_PATTERN)) or AIR_FRYER_PATTERN
+                ),
                 allow_unmatched_discovery_links=bool(
                     item.get(
                         "allow_unmatched_discovery_links",

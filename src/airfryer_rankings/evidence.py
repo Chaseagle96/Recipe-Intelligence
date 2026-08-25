@@ -149,13 +149,13 @@ def visible_rating_evidence(soup: BeautifulSoup, cfg: SourceConfig) -> tuple[flo
 
     if rating is None:
         for key in ("ratingValue", "rating"):
-            element = soup.find(attrs={"itemprop": key})
+            element = soup.find(True, attrs={"itemprop": key})
             rating = _element_number(element)
             if rating is not None:
                 break
     if count is None:
         for key in ("ratingCount", "reviewCount"):
-            element = soup.find(attrs={"itemprop": key})
+            element = soup.find(True, attrs={"itemprop": key})
             value = _element_number(element)
             if value is not None:
                 count = int(value)

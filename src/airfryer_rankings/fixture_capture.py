@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import html as html_lib
 import json
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,7 @@ from bs4 import BeautifulSoup
 from .evidence import jsonld_objects
 from .http import get, make_session, robots_and_sitemaps
 from .models import UA, SourceConfig, load_sources
+from .persistence import atomic_write_json, atomic_write_text
 from .storage import load_state
 
 FIXTURE_JSONLD_FIELDS = {
@@ -49,18 +51,21 @@ def sanitize_fixture_html(html: str, source_url: str) -> str:
     canonical_href = canonical.get("href") if canonical else source_url
     jsonld = _reduced_recipe_jsonld(soup)
     visible_nodes = []
-    for selector in ('[itemprop="ratingValue"]', '[itemprop="ratingCount"]', '[itemprop="reviewCount"]'):
+    for itemprop in ("ratingValue", "ratingCount", "reviewCount"):
+        selector = f'[itemprop="{itemprop}"]'
         for node in soup.select(selector)[:2]:
-            visible_nodes.append(str(node))
+            value = html_lib.escape(node.get_text(" ", strip=True))
+            visible_nodes.append(f'<span itemprop="{itemprop}">{value}</span>')
     parts = [
         "<!doctype html>",
         "<html><head>",
-        f"<title>{title}</title>",
-        f'<link rel="canonical" href="{canonical_href}">',
+        f"<title>{html_lib.escape(title)}</title>",
+        f'<link rel="canonical" href="{html_lib.escape(str(canonical_href), quote=True)}">',
     ]
     for obj in jsonld:
         parts.append('<script type="application/ld+json">')
-        parts.append(json.dumps(obj, ensure_ascii=False, separators=(",", ":")))
+        serialized = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+        parts.append(serialized.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026"))
         parts.append("</script>")
     parts.extend(["</head><body>", *visible_nodes, "</body></html>"])
     return "\n".join(parts) + "\n"
@@ -109,22 +114,27 @@ def capture_candidate_fixtures(
             if not parser.can_fetch(UA, url):
                 manifest["failed"].append({"source": cfg.domain, "url": url, "reason": "robots_denied"})
                 continue
-        except Exception:
-            pass
+        except Exception as exc:
+            manifest["failed"].append(
+                {"source": cfg.domain, "url": url, "reason": f"robots_error:{type(exc).__name__}"}
+            )
+            continue
         try:
             response = get(session, url, 25)
             sanitized = sanitize_fixture_html(response.text, url)
             path = output / f"{cfg.domain.replace('.', '_')}.html"
-            path.write_text(sanitized, encoding="utf-8")
+            atomic_write_text(path, sanitized)
             manifest["captured"].append({"source": cfg.domain, "url": url, "fixture": path.name})
         except Exception as exc:
             manifest["failed"].append({"source": cfg.domain, "url": url, "reason": type(exc).__name__})
-    (output / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    atomic_write_json(output / "manifest.json", manifest)
     return manifest
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Capture sanitized candidate regression fixtures from live publisher pages")
+    parser = argparse.ArgumentParser(
+        description="Capture sanitized candidate regression fixtures from live publisher pages"
+    )
     parser.add_argument("--sources", default="config/sources.yaml")
     parser.add_argument("--state", default="data/state.json")
     parser.add_argument("--output", default="output/fixture_candidates")

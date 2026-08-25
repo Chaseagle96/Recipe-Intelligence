@@ -22,7 +22,7 @@ def history_storage_health(
     policy: dict | None = None,
 ) -> dict:
     policy = policy or load_storage_policy()
-    archive = (policy.get("history", {}).get("archive_policy", {}) or {})
+    archive = policy.get("history", {}).get("archive_policy", {}) or {}
     record_threshold = int(archive.get("recommendation_record_threshold", 750000))
     bytes_threshold = int(archive.get("recommendation_bytes_threshold", 536870912))
     records = 0
@@ -72,9 +72,11 @@ def write_history_parquet(path: str | Path, observations: list[dict]) -> str | N
     for column in frame.columns:
         if frame[column].map(lambda value: isinstance(value, (dict, list, tuple, set))).any():
             frame[column] = frame[column].map(
-                lambda value: json.dumps(value, sort_keys=True, default=str)
-                if isinstance(value, (dict, list, tuple, set))
-                else value
+                lambda value: (
+                    json.dumps(value, sort_keys=True, default=str)
+                    if isinstance(value, (dict, list, tuple, set))
+                    else value
+                )
             )
     connection = duckdb.connect()
     try:

@@ -161,13 +161,7 @@ def build_corpus_recipe(
     if is_duplicate_alias:
         reasons.append("duplicate_alias")
 
-    explore_eligible = bool(
-        title_ok
-        and url_ok
-        and fresh
-        and evidence_status != "conflict"
-        and not is_duplicate_alias
-    )
+    explore_eligible = bool(title_ok and url_ok and fresh and evidence_status != "conflict" and not is_duplicate_alias)
     if is_ranked:
         serveability = "discover"
     elif is_duplicate_alias or evidence_status == "conflict" or not title_ok or not url_ok:

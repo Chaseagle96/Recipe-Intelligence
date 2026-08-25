@@ -40,6 +40,7 @@ from .models import (
     now_iso,
     parse_dt,
 )
+from .persistence import atomic_write_json, exclusive_lock
 from .source_registry import (
     ACTIVE,
     CANDIDATE,
@@ -64,6 +65,7 @@ from .source_security import (
     safe_get,
 )
 from .storage import load_state, write_run_records
+from .verticals import VerticalDefinition, load_verticals
 
 
 @dataclass(frozen=True)
@@ -247,17 +249,17 @@ def load_source_discovery_config(path: str | Path) -> dict[str, Any]:
     return payload
 
 
-def _context_from_config(slug: str, item: dict[str, Any]) -> VerticalContext:
+def _context_from_config(definition: VerticalDefinition, item: dict[str, Any]) -> VerticalContext:
     return VerticalContext(
-        slug=slug,
-        name=str(item.get("name") or slug.replace("_", " ").title()),
-        base_sources_path=Path(str(item["base_sources_path"])),
-        state_path=Path(str(item["state_path"])),
-        registry_path=Path(str(item["registry_path"])),
-        output_dir=Path(str(item["output_dir"])),
-        events_dir=Path(str(item["events_dir"])),
-        include_pattern=str(item["include_pattern"]),
-        allow_unmatched_discovery_links=bool(item.get("allow_unmatched_discovery_links", False)),
+        slug=definition.id,
+        name=definition.name,
+        base_sources_path=definition.source_config_path,
+        state_path=definition.state_path,
+        registry_path=definition.registry_path,
+        output_dir=definition.output_root,
+        events_dir=definition.events_root,
+        include_pattern=definition.include_pattern,
+        allow_unmatched_discovery_links=definition.allow_unmatched_discovery_links,
         query_terms=[str(value) for value in item.get("query_terms", [])],
         proteins=[str(value) for value in item.get("proteins", [])],
         cuisines=[str(value) for value in item.get("cuisines", [])],
@@ -267,13 +269,16 @@ def _context_from_config(slug: str, item: dict[str, Any]) -> VerticalContext:
     )
 
 
-def _load_contexts(config: dict[str, Any]) -> list[VerticalContext]:
+def _load_contexts(
+    config: dict[str, Any],
+    definitions: dict[str, VerticalDefinition],
+) -> list[VerticalContext]:
     output: list[VerticalContext] = []
     for slug, item in config["verticals"].items():
         if not isinstance(item, dict):
             continue
-        context = _context_from_config(str(slug), item)
-        context.base_sources = load_sources(context.base_sources_path)
+        context = _context_from_config(definitions[str(slug)], item)
+        context.base_sources = load_sources(context.base_sources_path, include_discovered=False)
         context.state = load_state(context.state_path)
         context.registry = load_source_registry(context.registry_path, context.slug)
         context.audit_start = len(context.registry.get("audit", []))
@@ -316,6 +321,10 @@ def _blocked_domains(config: dict[str, Any]) -> list[str]:
     return [str(value) for value in (config.get("blocked_domain_suffixes") or [])]
 
 
+def _deadline_reached(deadline: float | None) -> bool:
+    return deadline is not None and time.monotonic() >= deadline
+
+
 def _record_hit(context: VerticalContext, hit: DiscoveryHit, config: dict[str, Any], run_at: str) -> bool:
     domain = candidate_domain_from_url(hit.url)
     if not domain or is_non_publisher_domain(domain, _blocked_domains(config)):
@@ -341,6 +350,7 @@ def _discover_search_candidates(
     budget: dict[str, Any],
     providers: list[SearchProvider],
     run_at: str,
+    deadline: float | None = None,
 ) -> None:
     max_queries = int(budget.get("max_search_queries_per_run", 0))
     if max_queries <= 0:
@@ -349,7 +359,7 @@ def _discover_search_candidates(
     per_query = int(budget.get("search_results_per_query", 10))
     queries = build_query_family(context, max_queries)
     for provider in providers:
-        if len(context.new_candidate_domains) >= max_domains:
+        if len(context.new_candidate_domains) >= max_domains or _deadline_reached(deadline):
             break
         if not provider.available():
             context.provider_status.append({"provider": provider.name, "status": "unavailable_missing_configuration"})
@@ -357,7 +367,7 @@ def _discover_search_candidates(
         provider_hits = 0
         try:
             for query in queries:
-                if len(context.new_candidate_domains) >= max_domains:
+                if len(context.new_candidate_domains) >= max_domains or _deadline_reached(deadline):
                     break
                 hits = provider.search(query, per_query)
                 provider_hits += len(hits)
@@ -365,7 +375,8 @@ def _discover_search_candidates(
                     _record_hit(context, hit, config, run_at)
                     if len(context.new_candidate_domains) >= max_domains:
                         break
-            context.provider_status.append({"provider": provider.name, "status": "ok", "hits": provider_hits})
+            status = "deadline_exceeded" if _deadline_reached(deadline) else "ok"
+            context.provider_status.append({"provider": provider.name, "status": status, "hits": provider_hits})
         except Exception as exc:
             context.provider_status.append(
                 {"provider": provider.name, "status": f"error:{type(exc).__name__}", "detail": str(exc)[:200]}
@@ -403,6 +414,7 @@ def _discover_outbound_candidates(
     config: dict[str, Any],
     budget: dict[str, Any],
     run_at: str,
+    deadline: float | None = None,
 ) -> None:
     max_pages = int(budget.get("max_outbound_pages_per_run", 0))
     if max_pages <= 0:
@@ -414,7 +426,7 @@ def _discover_outbound_candidates(
     fetched = 0
     hits = 0
     for cfg, page_url in _discovery_pages_for_outbound(context, max_pages):
-        if len(context.new_candidate_domains) >= max_domains:
+        if len(context.new_candidate_domains) >= max_domains or _deadline_reached(deadline):
             break
         try:
             response = get(session, page_url, 20)
@@ -441,8 +453,9 @@ def _discover_outbound_candidates(
             )
             if len(context.new_candidate_domains) >= max_domains:
                 break
+    status = "deadline_exceeded" if _deadline_reached(deadline) else "ok"
     context.provider_status.append(
-        {"provider": "trusted_outbound_link", "status": "ok", "pages_fetched": fetched, "hits": hits}
+        {"provider": "trusted_outbound_link", "status": status, "pages_fetched": fetched, "hits": hits}
     )
 
 
@@ -537,8 +550,10 @@ def _recipe_jsonld(soup: BeautifulSoup) -> dict[str, Any] | None:
             continue
         ingredients = obj.get("recipeIngredient") or []
         instructions = _instruction_texts(obj)
-        score = int(bool(obj.get("name"))) + int(isinstance(ingredients, list) and len(ingredients) >= 3) + int(
-            len(instructions) >= 2
+        score = (
+            int(bool(obj.get("name")))
+            + int(isinstance(ingredients, list) and len(ingredients) >= 3)
+            + int(len(instructions) >= 2)
         )
         candidates.append((score, obj))
     return max(candidates, key=lambda item: item[0])[1] if candidates else None
@@ -561,11 +576,17 @@ def analyze_recipe_page(
     page.canonical_url = canonical
     page.canonical_external = not _same_source_domain(canonical, domain)
     page.editorial_link = any(
-        re.search(r"(?:about|editorial|test[- ]?kitchen|recipe[- ]?development)", anchor.get_text(" ", strip=True) + " " + str(anchor.get("href") or ""), re.I)
+        re.search(
+            r"(?:about|editorial|test[- ]?kitchen|recipe[- ]?development)",
+            anchor.get_text(" ", strip=True) + " " + str(anchor.get("href") or ""),
+            re.I,
+        )
         for anchor in soup.find_all("a", href=True)
     )
     if obj is None:
-        extracted, _ = extract_recipe_from_html(html, final_url, domain, SourceConfig(domain=domain), response_headers or {})
+        extracted, _ = extract_recipe_from_html(
+            html, final_url, domain, SourceConfig(domain=domain), response_headers or {}
+        )
         page.ranking_extractable = extracted is not None
         page.title = str((soup.title.string if soup.title else "") or "").strip()
         page.vertical_relevant = bool(include_re.search(final_url + " " + page.title))
@@ -574,7 +595,9 @@ def analyze_recipe_page(
     page.is_recipe = True
     page.title = str(obj.get("name") or (soup.title.string if soup.title else "") or final_url).strip()
     raw_ingredients = obj.get("recipeIngredient") or []
-    page.ingredients = tuple(str(value).strip() for value in raw_ingredients) if isinstance(raw_ingredients, list) else ()
+    page.ingredients = (
+        tuple(str(value).strip() for value in raw_ingredients) if isinstance(raw_ingredients, list) else ()
+    )
     page.instructions = _instruction_texts(obj)
     page.author = _author_name(obj)
     publisher = obj.get("publisher")
@@ -672,7 +695,6 @@ def _candidate_urls(
             sitemap,
             seen=seen_sitemaps,
             max_docs=int(budget.get("max_candidate_sitemap_docs", 40)),
-            safe=True,
         ):
             url = str(item.get("url") or "")
             if not url or not _same_source_domain(url, domain) or not include_re.search(url):
@@ -782,10 +804,7 @@ def qualification_metrics(
     completeness = [page.field_completeness for page in recipe_pages]
     evidence_confidences = [page.evidence_confidence for page in rated_pages]
 
-    rating_signatures = [
-        (round(page.evidence_confidence, 2), page.evidence_status)
-        for page in rated_pages
-    ]
+    rating_signatures = [(round(page.evidence_confidence, 2), page.evidence_status) for page in rated_pages]
     suspicious_uniform_ratings = bool(
         len(rating_signatures) >= 5
         and len(set(rating_signatures)) == 1
@@ -821,15 +840,22 @@ def qualification_metrics(
     metrics["ranking_evidence_pages"] = len(evidence_pages)
     metrics["ranking_evidence_coverage_ratio"] = len(evidence_pages) / len(recipe_pages) if recipe_pages else 0.0
     metrics["ranking_row_yield"] = len(ranking_extractable) / len(recipe_pages) if recipe_pages else 0.0
-    metrics["extraction_success_rate"] = (
-        len(ranking_extractable) / len(evidence_pages) if evidence_pages else None
-    )
+    metrics["extraction_success_rate"] = len(ranking_extractable) / len(evidence_pages) if evidence_pages else None
     return metrics
 
 
 def score_source_quality(metrics: dict[str, Any], policy: dict[str, Any]) -> tuple[float, dict[str, float]]:
     weights = policy.get("weights", {}) or {}
-    relevance = 100.0 * min(1.0, 0.65 * float(metrics.get("vertical_relevance_ratio") or 0.0) + 0.35 * min(1.0, float(metrics.get("qualifying_vertical_recipe_count") or 0) / max(1.0, float(policy.get("target_vertical_recipe_count") or 20))))
+    relevance = 100.0 * min(
+        1.0,
+        0.65 * float(metrics.get("vertical_relevance_ratio") or 0.0)
+        + 0.35
+        * min(
+            1.0,
+            float(metrics.get("qualifying_vertical_recipe_count") or 0)
+            / max(1.0, float(policy.get("target_vertical_recipe_count") or 20)),
+        ),
+    )
     conditional_extraction = metrics.get("extraction_success_rate")
     if conditional_extraction is None:
         extraction_unit = (
@@ -904,7 +930,9 @@ def hard_gate_failures(metrics: dict[str, Any], policy: dict[str, Any]) -> tuple
         permanent.append("thin_recipe_content")
     if float(metrics.get("external_canonical_ratio") or 0.0) > float(hard.get("max_external_canonical_ratio", 0.25)):
         permanent.append("external_canonical_or_mirror_behavior")
-    if float(metrics.get("within_source_duplicate_ratio") or 0.0) > float(hard.get("max_within_source_duplicate_ratio", 0.65)):
+    if float(metrics.get("within_source_duplicate_ratio") or 0.0) > float(
+        hard.get("max_within_source_duplicate_ratio", 0.65)
+    ):
         permanent.append("extreme_internal_duplicate_content")
     if float(metrics.get("trap_url_ratio") or 0.0) > float(hard.get("max_trap_url_ratio", 0.30)):
         permanent.append("crawler_trap_risk")
@@ -992,7 +1020,9 @@ def qualify_candidate(
         if delay > 0:
             time.sleep(delay)
 
-    existing_recipes = [dict(value) for value in (context.state.get("recipes", {}) or {}).values() if isinstance(value, dict)]
+    existing_recipes = [
+        dict(value) for value in (context.state.get("recipes", {}) or {}).values() if isinstance(value, dict)
+    ]
     metrics = qualification_metrics(
         pages,
         candidate_url_count=len(candidate_urls),
@@ -1152,7 +1182,9 @@ def _apply_qualification_result(
     )
     enough_runs = consecutive >= int(thresholds["promotion_min_qualifying_attempts"])
     if fast_track or enough_runs:
-        reason = "deep high-confidence fast-track" if fast_track else f"passed {consecutive} independent qualification runs"
+        reason = (
+            "deep high-confidence fast-track" if fast_track else f"passed {consecutive} independent qualification runs"
+        )
         transition_source(
             context.registry,
             domain,
@@ -1258,7 +1290,9 @@ def update_promoted_source_lifecycle(context: VerticalContext, config: dict[str,
             )
 
 
-def _evaluation_queue(context: VerticalContext, config: dict[str, Any], budget: dict[str, Any], mode: str, run_at: str) -> list[dict[str, Any]]:
+def _evaluation_queue(
+    context: VerticalContext, config: dict[str, Any], budget: dict[str, Any], mode: str, run_at: str
+) -> list[dict[str, Any]]:
     limit = int(budget.get("max_candidate_domains_evaluated", budget.get("max_candidate_domains_per_run", 20)))
     now = parse_dt(run_at) or datetime.now(timezone.utc)
     eligible: list[dict[str, Any]] = []
@@ -1325,14 +1359,29 @@ def _metrics_for_context(
     scores = [float(row.get("quality_score") or 0.0) for row in evaluated if row.get("quality_score") is not None]
     pages_fetched = sum(int(row.get("pages_fetched") or 0) for row in evaluated)
     recipes_recognized = sum(int(row.get("recipes_recognized") or 0) for row in evaluated)
-    promoted_this_run = sum(1 for event in context.registry.get("audit", [])[context.audit_start :] if event.get("event") == "SOURCE_PROMOTED")
-    rejected_this_run = sum(1 for event in context.registry.get("audit", [])[context.audit_start :] if event.get("event") == "SOURCE_REJECTED")
-    quarantined_this_run = sum(1 for event in context.registry.get("audit", [])[context.audit_start :] if event.get("event") == "SOURCE_QUARANTINED")
+    promoted_this_run = sum(
+        1
+        for event in context.registry.get("audit", [])[context.audit_start :]
+        if event.get("event") == "SOURCE_PROMOTED"
+    )
+    rejected_this_run = sum(
+        1
+        for event in context.registry.get("audit", [])[context.audit_start :]
+        if event.get("event") == "SOURCE_REJECTED"
+    )
+    quarantined_this_run = sum(
+        1
+        for event in context.registry.get("audit", [])[context.audit_start :]
+        if event.get("event") == "SOURCE_QUARANTINED"
+    )
     return {
         "generated_at": run_at,
         "vertical": context.slug,
         "source_gate_version": SOURCE_GATE_VERSION,
-        "candidate_domains_discovered": sum(int(record.get("discovery_count") or 0) for record in (context.registry.get("candidates", {}) or {}).values()),
+        "candidate_domains_discovered": sum(
+            int(record.get("discovery_count") or 0)
+            for record in (context.registry.get("candidates", {}) or {}).values()
+        ),
         "candidate_domains_new": len(context.new_candidate_domains),
         "candidate_domains_evaluated": len(evaluated),
         "candidate_domains_rejected": rejected_this_run,
@@ -1342,7 +1391,9 @@ def _metrics_for_context(
         "candidate_domains_degraded": int(status_counts.get(DEGRADED, 0)),
         "candidate_domains_suspended": int(status_counts.get(SUSPENDED, 0)),
         "promotion_rate": promoted_this_run / len(evaluated) if evaluated else 0.0,
-        "median_source_quality_score": statistics.median(scores) if scores else summary.get("median_source_quality_score"),
+        "median_source_quality_score": statistics.median(scores)
+        if scores
+        else summary.get("median_source_quality_score"),
         "qualification_pages_fetched": pages_fetched,
         "qualification_extraction_success_rate": recipes_recognized / pages_fetched if pages_fetched else 0.0,
         "effective_source_count": summary["effective_source_count"],
@@ -1355,7 +1406,7 @@ def _metrics_for_context(
     }
 
 
-def run_source_expansion(
+def _run_source_expansion(
     config_path: str | Path,
     *,
     mode: str,
@@ -1366,31 +1417,40 @@ def run_source_expansion(
     if mode not in {"daily", "deep", "smoke"}:
         raise ValueError("source expansion mode must be daily, deep, or smoke")
     run_at = run_at or now_iso()
+    config_path = Path(config_path).resolve()
     config = load_source_discovery_config(config_path)
-    contexts = _load_contexts(config)
+    contexts = _load_contexts(config, load_verticals(config_path))
     budget = _mode_budget(config, mode)
     search_providers = _providers(config)
     seeds = _load_seed_hits(seed_file, contexts)
+    deadline: float | None = None
 
     if mode != "smoke":
+        max_seconds = max(0.0, float(budget.get("max_discovery_seconds", 900)))
+        deadline = time.monotonic() + max_seconds
         for context in contexts:
             update_promoted_source_lifecycle(context, config, run_at)
             for hit in seeds.get(context.slug, []):
                 _record_hit(context, hit, config, run_at)
-            _discover_search_candidates(context, config, budget, search_providers, run_at)
-            _discover_outbound_candidates(context, config, budget, run_at)
+            if not _deadline_reached(deadline):
+                _discover_search_candidates(context, config, budget, search_providers, run_at, deadline=deadline)
+            if not _deadline_reached(deadline):
+                _discover_outbound_candidates(context, config, budget, run_at, deadline=deadline)
         _cross_seed(contexts, config, run_at)
 
-    aggregate: dict[str, Any] = {"generated_at": run_at, "mode": mode, "source_gate_version": SOURCE_GATE_VERSION, "verticals": {}}
+    aggregate: dict[str, Any] = {
+        "generated_at": run_at,
+        "mode": mode,
+        "source_gate_version": SOURCE_GATE_VERSION,
+        "verticals": {},
+    }
     for context in contexts:
         evaluated: list[dict[str, Any]] = []
         if mode != "smoke":
-            started = time.monotonic()
-            max_seconds = float(budget.get("max_discovery_seconds", 900))
             max_promotions = int(budget.get("max_new_promotions_per_run", 5))
             promotions = 0
             for record in _evaluation_queue(context, config, budget, mode, run_at):
-                if time.monotonic() - started >= max_seconds:
+                if _deadline_reached(deadline):
                     break
                 metrics, crawl_config = qualify_candidate(context, record, config, budget, run_at)
                 evaluated.append(metrics)
@@ -1409,18 +1469,35 @@ def run_source_expansion(
         if not dry_run:
             save_source_registry(context.registry_path, context.registry)
             context.output_dir.mkdir(parents=True, exist_ok=True)
-            (context.output_dir / "source_expansion.json").write_text(
-                json.dumps(metrics_payload, indent=2, sort_keys=True, default=str) + "\n",
-                encoding="utf-8",
-            )
+            atomic_write_json(context.output_dir / "source_expansion.json", metrics_payload, default=str)
             new_audit = context.registry.get("audit", [])[context.audit_start :]
             write_run_records(context.events_dir, new_audit, run_at)
 
     if not dry_run:
         aggregate_path = Path(str(config.get("aggregate_output_path") or "output/source_expansion_all.json"))
-        aggregate_path.parent.mkdir(parents=True, exist_ok=True)
-        aggregate_path.write_text(json.dumps(aggregate, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
+        if not aggregate_path.is_absolute():
+            aggregate_path = config_path.parent.parent / aggregate_path
+        atomic_write_json(aggregate_path, aggregate, default=str)
     return aggregate
+
+
+def run_source_expansion(
+    config_path: str | Path,
+    *,
+    mode: str,
+    seed_file: str | Path | None = None,
+    dry_run: bool = False,
+    run_at: str | None = None,
+) -> dict[str, Any]:
+    lock_target = Path(config_path).resolve().with_suffix(".source-expansion")
+    with exclusive_lock(lock_target):
+        return _run_source_expansion(
+            config_path,
+            mode=mode,
+            seed_file=seed_file,
+            dry_run=dry_run,
+            run_at=run_at,
+        )
 
 
 def main() -> None:

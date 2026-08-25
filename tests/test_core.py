@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 
 from airfryer_rankings.core import (
@@ -44,7 +43,15 @@ def recipe(rid, title, source, rating, count, sig="", ingredients=(), status="sc
 
 
 def empty_state():
-    return {"recipes": {}, "rank_history": [], "source_history": [], "url_catalog": {}, "anomaly_history": [], "schema_version": 4, "migration": {}}
+    return {
+        "recipes": {},
+        "rank_history": [],
+        "source_history": [],
+        "url_catalog": {},
+        "anomaly_history": [],
+        "schema_version": 4,
+        "migration": {},
+    }
 
 
 def test_bayesian_rewards_volume_without_ignoring_rating():
@@ -68,8 +75,24 @@ def test_bayesian_rewards_volume_without_ignoring_rating():
 def test_cross_site_duplicate_does_not_double_count_review_population():
     ingredients = ["1 lb chicken breast", "1 tsp salt", "1 tbsp olive oil"]
     recipes = [
-        {**recipe("a", "Air Fryer Chicken", "one.com", 4.8, 100, ingredient_signature(ingredients), ingredients).__dict__, "last_seen_at": "2026-08-18T20:00:00+00:00"},
-        {**recipe("b", "Crispy Air Fryer Chicken", "two.com", 5.0, 50, ingredient_signature(["1 pound chicken breast", "salt", "olive oil"]), ["1 pound chicken breast", "salt", "olive oil"]).__dict__, "last_seen_at": "2026-08-18T20:00:00+00:00"},
+        {
+            **recipe(
+                "a", "Air Fryer Chicken", "one.com", 4.8, 100, ingredient_signature(ingredients), ingredients
+            ).__dict__,
+            "last_seen_at": "2026-08-18T20:00:00+00:00",
+        },
+        {
+            **recipe(
+                "b",
+                "Crispy Air Fryer Chicken",
+                "two.com",
+                5.0,
+                50,
+                ingredient_signature(["1 pound chicken breast", "salt", "olive oil"]),
+                ["1 pound chicken breast", "salt", "olive oil"],
+            ).__dict__,
+            "last_seen_at": "2026-08-18T20:00:00+00:00",
+        },
     ]
     deduped, count, groups = dedupe_current(recipes, detailed=True)
     assert count == 1
@@ -80,8 +103,22 @@ def test_cross_site_duplicate_does_not_double_count_review_population():
 
 
 def test_fuzzy_duplicate_similarity_uses_ingredients():
-    a = recipe("a", "Air Fryer Chicken Breast", "one.com", 4.8, 100, ingredients=["1 lb chicken breast", "1 tbsp olive oil", "salt"]).__dict__
-    b = recipe("b", "Crispy Air Fryer Chicken Breasts", "two.com", 4.9, 80, ingredients=["1 pound chicken breasts", "olive oil", "kosher salt"]).__dict__
+    a = recipe(
+        "a",
+        "Air Fryer Chicken Breast",
+        "one.com",
+        4.8,
+        100,
+        ingredients=["1 lb chicken breast", "1 tbsp olive oil", "salt"],
+    ).__dict__
+    b = recipe(
+        "b",
+        "Crispy Air Fryer Chicken Breasts",
+        "two.com",
+        4.9,
+        80,
+        ingredients=["1 pound chicken breasts", "olive oil", "kosher salt"],
+    ).__dict__
     assert duplicate_similarity(a, b) >= 0.88
 
 
@@ -90,14 +127,14 @@ def test_ingredient_signature_is_order_independent():
 
 
 def test_evidence_conflict_is_quarantined():
-    html = '''
+    html = """
     <html><head><title>Air Fryer Test</title><link rel="canonical" href="https://x.com/test"></head><body>
     <span itemprop="ratingValue">4.1</span><span itemprop="ratingCount">100</span>
     <script type="application/ld+json">{
       "@type":"Recipe","name":"Air Fryer Test",
       "recipeIngredient":["chicken","salt"],
       "aggregateRating":{"ratingValue":"4.9","ratingCount":"100","bestRating":"5"}
-    }</script></body></html>'''
+    }</script></body></html>"""
     row, _ = extract_recipe_from_html(html, "https://x.com/test", "x.com", SourceConfig("x.com"))
     assert row is not None
     assert row.evidence_status == "conflict"
@@ -109,27 +146,27 @@ def test_evidence_conflict_is_quarantined():
 
 
 def test_verified_dual_evidence_gets_high_confidence():
-    html = '''
+    html = """
     <html><head><title>Air Fryer Test</title></head><body>
     <span itemprop="ratingValue">4.8</span><span itemprop="ratingCount">101</span>
     <script type="application/ld+json">{
       "@type":"Recipe","name":"Air Fryer Test",
       "recipeIngredient":["chicken","salt"],
       "aggregateRating":{"ratingValue":"4.8","ratingCount":"100","bestRating":"5"}
-    }</script></body></html>'''
+    }</script></body></html>"""
     row, _ = extract_recipe_from_html(html, "https://x.com/test", "x.com", SourceConfig("x.com"))
     assert row.evidence_status == "verified"
     assert row.evidence_confidence == 1.0
 
 
 def test_schema_only_evidence_is_rankable_but_penalized():
-    html = '''
+    html = """
     <html><head><title>Air Fryer Schema Only</title></head><body>
     <script type="application/ld+json">{
       "@type":"Recipe","name":"Air Fryer Schema Only",
       "recipeIngredient":["potato","salt"],
       "aggregateRating":{"ratingValue":"4.9","ratingCount":"250","bestRating":"5"}
-    }</script></body></html>'''
+    }</script></body></html>"""
     row, _ = extract_recipe_from_html(html, "https://x.com/schema", "x.com", SourceConfig("x.com"))
     assert row is not None
     assert row.evidence_status == "schema_only"
@@ -146,12 +183,22 @@ def test_legacy_state_migration_removes_favorable_point85_default():
         "schema_version": 3,
         "recipes": {
             "a": {
-                "recipe_id": "a", "title": "Legacy", "source": "x.com", "url": "https://x.com/a",
-                "canonical_url": "https://x.com/a", "normalized_rating": 4.9, "rating_count": 500,
-                "evidence_confidence": 0.85, "evidence_status": "", "last_seen_at": "2026-08-18T20:00:00+00:00",
+                "recipe_id": "a",
+                "title": "Legacy",
+                "source": "x.com",
+                "url": "https://x.com/a",
+                "canonical_url": "https://x.com/a",
+                "normalized_rating": 4.9,
+                "rating_count": 500,
+                "evidence_confidence": 0.85,
+                "evidence_status": "",
+                "last_seen_at": "2026-08-18T20:00:00+00:00",
             }
         },
-        "url_catalog": {}, "rank_history": [], "source_history": [], "anomaly_history": [],
+        "url_catalog": {},
+        "rank_history": [],
+        "source_history": [],
+        "anomaly_history": [],
     }
     migrated = migrate_state(state)
     row = migrated["recipes"]["a"]
@@ -211,8 +258,12 @@ def test_category_aware_normalization_reports_category_baselines():
     state = empty_state()
     rows = []
     for i in range(10):
-        rows.append(recipe(f"c{i}", f"Air Fryer Chicken {i}", "mixed.com", 4.9, 300 + i, ingredients=["chicken breast", "salt"]))
-        rows.append(recipe(f"p{i}", f"Air Fryer Potatoes {i}", "other.com", 4.5, 300 + i, ingredients=["potatoes", "salt"]))
+        rows.append(
+            recipe(f"c{i}", f"Air Fryer Chicken {i}", "mixed.com", 4.9, 300 + i, ingredients=["chicken breast", "salt"])
+        )
+        rows.append(
+            recipe(f"p{i}", f"Air Fryer Potatoes {i}", "other.com", 4.5, 300 + i, ingredients=["potatoes", "salt"])
+        )
     merge_observations(state, rows, "2026-08-18T20:00:00+00:00")
     _, method = bayesian_rank(state, stale_days=10000)
     assert "Chicken" in method["category_baselines"]
@@ -224,9 +275,22 @@ def test_hourly_selector_prioritizes_top_rank_and_new_urls():
     state = {
         "recipes": {"top": {"last_rank": 1, "rating_count": 1000, "previous_rating_count": 990}},
         "url_catalog": {
-            "https://x.com/top": {"url": "https://x.com/top", "source": "x.com", "recipe_id": "top", "last_checked": "2026-08-18T19:00:00+00:00"},
-            "https://x.com/old": {"url": "https://x.com/old", "source": "x.com", "last_checked": "2026-08-18T19:00:00+00:00"},
-            "https://x.com/new": {"url": "https://x.com/new", "source": "x.com", "first_discovered": "2026-08-18T20:00:00+00:00"},
+            "https://x.com/top": {
+                "url": "https://x.com/top",
+                "source": "x.com",
+                "recipe_id": "top",
+                "last_checked": "2026-08-18T19:00:00+00:00",
+            },
+            "https://x.com/old": {
+                "url": "https://x.com/old",
+                "source": "x.com",
+                "last_checked": "2026-08-18T19:00:00+00:00",
+            },
+            "https://x.com/new": {
+                "url": "https://x.com/new",
+                "source": "x.com",
+                "first_discovered": "2026-08-18T20:00:00+00:00",
+            },
         },
     }
     targets = select_refresh_targets(state, [SourceConfig("x.com")], "hourly", hourly_limit=2)
@@ -263,14 +327,14 @@ def test_category_classification_is_multilabel():
 
 
 def test_jsonld_histogram_is_preserved_and_used():
-    html = '''
+    html = """
     <html><head><title>Histogram Recipe</title></head><body>
     <script type="application/ld+json">{
       "@type":"Recipe","name":"Histogram Recipe",
       "recipeIngredient":["potato","salt"],
       "aggregateRating":{"ratingValue":"4.5","ratingCount":"100","bestRating":"5",
       "ratingHistogram":{"5":70,"4":20,"3":5,"2":3,"1":2}}
-    }</script></body></html>'''
+    }</script></body></html>"""
     row, _ = extract_recipe_from_html(html, "https://x.com/h", "x.com", SourceConfig("x.com"))
     assert row.rating_histogram["5"] == 70
     state = empty_state()
@@ -283,10 +347,14 @@ def test_jsonld_histogram_is_preserved_and_used():
 def test_empirical_uncertainty_requires_temporal_and_cross_recipe_maturity():
     observations = []
     for i in range(32):
-        observations.append({
-            "recipe_id": "a", "timestamp": f"2026-08-{1 + i // 24:02d}T{i % 24:02d}:00:00+00:00",
-            "rating": 4.7 + (0.01 if i % 2 else 0.0), "rating_count": 100 + i,
-        })
+        observations.append(
+            {
+                "recipe_id": "a",
+                "timestamp": f"2026-08-{1 + i // 24:02d}T{i % 24:02d}:00:00+00:00",
+                "rating": 4.7 + (0.01 if i % 2 else 0.0),
+                "rating_count": 100 + i,
+            }
+        )
     calibration = build_empirical_uncertainty(observations)
     bucket = calibration["100-499"]
     assert bucket["sample_pairs"] == 1
@@ -320,13 +388,15 @@ def test_review_velocity_and_longitudinal_metrics_are_exposed():
 
 def test_source_health_does_not_treat_not_checked_as_failure():
     state = empty_state()
-    state["source_history"] = [{
-        "run_at": "2026-08-18T20:00:00+00:00",
-        "coverage": [
-            {"source": "x.com", "status": "ok"},
-            {"source": "y.com", "status": "not_checked_this_run"},
-        ],
-    }]
+    state["source_history"] = [
+        {
+            "run_at": "2026-08-18T20:00:00+00:00",
+            "coverage": [
+                {"source": "x.com", "status": "ok"},
+                {"source": "y.com", "status": "not_checked_this_run"},
+            ],
+        }
+    ]
     health, summary = source_health_summary(
         state,
         [{"source": "x.com", "status": "ok"}, {"source": "y.com", "status": "not_checked_this_run"}],

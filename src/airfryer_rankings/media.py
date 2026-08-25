@@ -7,8 +7,8 @@ from typing import Iterable, cast
 from PIL import Image, UnidentifiedImageError
 
 from .dedupe import candidate_duplicate_pairs
-from .http import make_session
-from .models import HEADERS, RecipeRow
+from .http import get, make_session
+from .models import RecipeRow
 
 
 def perceptual_hash_bytes(payload: bytes, size: int = 8) -> str:
@@ -30,21 +30,8 @@ def fetch_perceptual_hash(url: str, max_bytes: int = 2_000_000) -> str:
         return ""
     session = make_session()
     try:
-        response = session.get(url, headers={**HEADERS, "Accept": "image/*"}, timeout=15, stream=True)
-        response.raise_for_status()
-        content_length = int(response.headers.get("Content-Length") or 0)
-        if content_length and content_length > max_bytes:
-            return ""
-        chunks = []
-        total = 0
-        for chunk in response.iter_content(65536):
-            if not chunk:
-                continue
-            total += len(chunk)
-            if total > max_bytes:
-                return ""
-            chunks.append(chunk)
-        return perceptual_hash_bytes(b"".join(chunks))
+        response = get(session, url, 15, headers={"Accept": "image/*"}, max_bytes=max_bytes)
+        return perceptual_hash_bytes(response.content)
     except (OSError, UnidentifiedImageError, Exception):
         return ""
     finally:

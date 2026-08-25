@@ -191,10 +191,10 @@ Both workbooks include Top 50, all rankings, rank explainability, source coverag
 
 ## Continuous integration and supply-chain controls
 
-Recipe Intelligence has independent production workflows for Air Fryer and Slow Cooker. Both run the shared quality toolchain:
+Recipe Intelligence has independent production workflows for Air Fryer and Slow Cooker. Both run the shared quality toolchain; the Air Fryer invocation audits their shared dependency set once per run:
 
 1. pinned dependency installation;
-2. vulnerability audit;
+2. shared-dependency vulnerability audit;
 3. Ruff linting;
 4. mypy static analysis;
 5. pytest with branch coverage gate;
@@ -220,7 +220,11 @@ The test suite combines deterministic unit/regression tests, reviewed real-page 
 - `7 9 * * *`: daily discovery/full-known-catalog refresh
 - `37 9 * * 0`: weekly deep discovery/full refresh
 
-Both workflows also support manual `hourly`, `daily`, `deep`, or `backfill` execution. Pull requests run bounded live smoke crawls without production writes.
+Both workflows also support manual `hourly`, `daily`, `deep`, or `backfill` execution. Pull requests run bounded live smoke crawls with read-only tokens and without repository secrets or production writes.
+
+### Authority lifecycle
+
+Source expansion marks both serving generations `refresh_required`. A ready Source Catalog Sync then dispatches authority invalidation, and only after both vertical authority files are committed does it dispatch full daily refreshes. Ranking publication uses the canonical `publish-authority` operation and is fail-closed: an hourly run may defer publication until a daily/deep refresh, while unexpected certification failures fail the workflow. Authority Postcheck certifies only a completed production generation that still matches current `main`; Authority Self-Heal dispatches a missing daily recovery without treating pull-request smoke runs as active production work.
 
 ## Running locally
 
@@ -238,22 +242,13 @@ PYTHONPATH=src pytest --cov=airfryer_rankings
 Run Air Fryer from the repository root:
 
 ```bash
-PYTHONPATH=src python -m airfryer_rankings.run --mode hourly
+PYTHONPATH=src python -m airfryer_rankings.ops run-vertical --vertical air-fryer --mode hourly
 ```
 
-Run Slow Cooker from its isolated working tree:
+Run Slow Cooker from the repository root:
 
 ```bash
-cd verticals/slow_cooker
-RECIPE_INTELLIGENCE_VERTICAL='Slow Cooker' \
-RECIPE_INTELLIGENCE_VERTICAL_SLUG='slow_cooker' \
-PYTHONPATH=../../src python -m airfryer_rankings.run \
-  --mode hourly \
-  --sources ../../config/verticals/slow_cooker/sources.yaml \
-  --state data/state.json \
-  --model-config ../../config/verticals/slow_cooker/model.yaml \
-  --storage-config ../../config/verticals/slow_cooker/storage.yaml \
-  --slo-config ../../config/slo.yaml
+PYTHONPATH=src python -m airfryer_rankings.ops run-vertical --vertical slow-cooker --mode hourly
 ```
 
 The GitHub workflow additionally namespaces the Slow Cooker Excel artifact as `slow_cooker_rankings.xlsx` and validates that all generated state and serving files stay inside the Slow Cooker tree.

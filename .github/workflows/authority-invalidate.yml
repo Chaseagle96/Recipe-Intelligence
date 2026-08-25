@@ -1,10 +1,10 @@
 name: Recipe Intelligence Authority Invalidation
 
 on:
+  # zizmor: ignore[dangerous-triggers] workflow_run is gated to successful same-repository main pushes below.
   workflow_run:
     workflows:
       - Recipe Intelligence Source Expansion
-      - Recipe Intelligence Source Catalog Sync
     types: [completed]
   push:
     branches: [main]
@@ -17,30 +17,55 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
-  contents: write
-
-concurrency:
-  group: recipe-intelligence-authority-invalidate-main
-  cancel-in-progress: false
+  contents: read
 
 jobs:
   invalidate:
     if: >-
       github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event != 'pull_request' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - vertical: air-fryer
+            authority_vertical: air_fryer
+            metrics: output/source_expansion.json
+            summary: output/summary.json
+            authority: output/authority.json
+            public_authority: docs/api/authority.json
+            manifest: docs/api/manifest.json
+            dashboard: docs/index.html
+          - vertical: slow-cooker
+            authority_vertical: slow_cooker
+            metrics: verticals/slow_cooker/output/source_expansion.json
+            summary: verticals/slow_cooker/output/summary.json
+            authority: verticals/slow_cooker/output/authority.json
+            public_authority: verticals/slow_cooker/docs/api/authority.json
+            manifest: verticals/slow_cooker/docs/api/manifest.json
+            dashboard: verticals/slow_cooker/docs/index.html
+    concurrency:
+      group: recipe-intelligence-${{ matrix.vertical }}-state
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write
     steps:
       - name: Checkout current production state
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
           ref: main
 
       - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.12'
           cache: pip
@@ -48,44 +73,36 @@ jobs:
       - name: Install runtime dependencies
         run: pip install -r requirements.txt
 
-      - name: Mark Air Fryer serving generation refresh-required
+      - name: Mark serving generation refresh-required
+        env:
+          AUTHORITY_VERTICAL: ${{ matrix.authority_vertical }}
+          METRICS: ${{ matrix.metrics }}
+          SUMMARY: ${{ matrix.summary }}
+          AUTHORITY: ${{ matrix.authority }}
+          PUBLIC_AUTHORITY: ${{ matrix.public_authority }}
+          MANIFEST: ${{ matrix.manifest }}
         run: |
           PYTHONPATH=src python scripts/ranking_authority.py invalidate \
-            --vertical air_fryer \
-            --metrics output/source_expansion.json \
-            --summary output/summary.json \
-            --authority output/authority.json \
-            --public-authority docs/api/authority.json \
-            --manifest docs/api/manifest.json \
-            --reason source_or_catalog_generation_advanced
-
-      - name: Mark Slow Cooker serving generation refresh-required
-        run: |
-          PYTHONPATH=src python scripts/ranking_authority.py invalidate \
-            --vertical slow_cooker \
-            --metrics verticals/slow_cooker/output/source_expansion.json \
-            --summary verticals/slow_cooker/output/summary.json \
-            --authority verticals/slow_cooker/output/authority.json \
-            --public-authority verticals/slow_cooker/docs/api/authority.json \
-            --manifest verticals/slow_cooker/docs/api/manifest.json \
+            --vertical "$AUTHORITY_VERTICAL" \
+            --metrics "$METRICS" \
+            --summary "$SUMMARY" \
+            --authority "$AUTHORITY" \
+            --public-authority "$PUBLIC_AUTHORITY" \
+            --manifest "$MANIFEST" \
             --reason source_or_catalog_generation_advanced
 
       - name: Commit authority invalidation when needed
+        env:
+          SUMMARY: ${{ matrix.summary }}
+          AUTHORITY: ${{ matrix.authority }}
+          PUBLIC_AUTHORITY: ${{ matrix.public_authority }}
+          MANIFEST: ${{ matrix.manifest }}
+          DASHBOARD: ${{ matrix.dashboard }}
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          for file in \
-            output/summary.json \
-            output/authority.json \
-            docs/api/manifest.json \
-            docs/api/authority.json \
-            docs/index.html \
-            verticals/slow_cooker/output/summary.json \
-            verticals/slow_cooker/output/authority.json \
-            verticals/slow_cooker/docs/api/manifest.json \
-            verticals/slow_cooker/docs/api/authority.json \
-            verticals/slow_cooker/docs/index.html; do
+          for file in "$SUMMARY" "$AUTHORITY" "$MANIFEST" "$PUBLIC_AUTHORITY" "$DASHBOARD"; do
             [ ! -e "$file" ] || git add "$file"
           done
           if ! git diff --quiet; then
@@ -96,19 +113,26 @@ jobs:
           if git diff --cached --quiet; then
             echo 'Serving authority already reflects current input generation.'
           else
-            git commit -m 'Invalidate stale recipe ranking authority'
+            git commit -m 'Invalidate stale ${{ matrix.vertical }} ranking authority'
             git pull --rebase origin main
             git push origin HEAD:main
           fi
 
+  dispatch:
+    if: >-
+      needs.invalidate.result == 'success' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs: invalidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      contents: read
+    concurrency:
+      group: recipe-intelligence-authority-refresh-dispatch
+      cancel-in-progress: false
+    steps:
       - name: Dispatch full ranking refresh after invalidation
-        if: >-
-          github.event_name == 'push' ||
-          github.event_name == 'workflow_dispatch' ||
-          (github.event_name == 'workflow_run' &&
-           github.event.workflow_run.name == 'Recipe Intelligence Source Catalog Sync' &&
-           github.event.workflow_run.conclusion == 'success' &&
-           github.event.workflow_run.head_branch == 'main')
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -117,9 +141,14 @@ jobs:
           gh workflow run slow-cooker.yml --repo "$GITHUB_REPOSITORY" --ref main -f mode=daily
           echo 'Full Air Fryer and Slow Cooker ranking refreshes dispatched after authority invalidation completed.'
 
+  explain-source-expansion:
+    if: github.event_name == 'workflow_run' && needs.invalidate.result == 'success'
+    needs: invalidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
       - name: Explain source-expansion-only invalidation
-        if: >-
-          github.event_name == 'workflow_run' &&
-          github.event.workflow_run.name == 'Recipe Intelligence Source Expansion'
         run: >-
           echo 'Authority was invalidated after source expansion. The full ranking refresh will be dispatched by the subsequent successful Source Catalog Sync invalidation run.'

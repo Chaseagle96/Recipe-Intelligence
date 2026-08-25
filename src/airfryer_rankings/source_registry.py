@@ -80,9 +80,7 @@ def _validate_source_registry_shape(payload: dict, target: Path) -> None:
             raise PersistenceValidationError(f"Source registry candidate {domain!r} must be an object: {target}")
     for domain, override in (payload.get("manual_overrides") or {}).items():
         if not isinstance(override, dict):
-            raise PersistenceValidationError(
-                f"Source registry manual override {domain!r} must be an object: {target}"
-            )
+            raise PersistenceValidationError(f"Source registry manual override {domain!r} must be an object: {target}")
     for index, event in enumerate(payload.get("audit") or []):
         if not isinstance(event, dict):
             raise PersistenceValidationError(f"Source registry audit event {index} must be an object: {target}")

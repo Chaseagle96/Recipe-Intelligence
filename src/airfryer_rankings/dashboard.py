@@ -85,7 +85,9 @@ def _existing_normalized_corpus(docs_dir: str | Path) -> tuple[list[dict] | None
     catalog = state.get("url_catalog", {}) if isinstance(state, dict) else {}
     if not isinstance(recipes, dict):
         return None, len(catalog) if isinstance(catalog, dict) else None
-    return [dict(row) for row in recipes.values() if isinstance(row, dict)], len(catalog) if isinstance(catalog, dict) else None
+    return [dict(row) for row in recipes.values() if isinstance(row, dict)], len(catalog) if isinstance(
+        catalog, dict
+    ) else None
 
 
 def write_dashboard(

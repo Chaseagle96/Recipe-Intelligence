@@ -5,7 +5,14 @@ from pathlib import Path
 
 import pytest
 
-from airfryer_rankings.authority import AuthorityError, invalidate_authority, publish_authority
+import airfryer_rankings.authority as authority_module
+from airfryer_rankings.authority import (
+    AuthorityError,
+    evaluate_authority,
+    invalidate_authority,
+    publish_authority,
+    ranking_is_current,
+)
 
 
 def _write(path: Path, payload: dict) -> None:
@@ -65,6 +72,7 @@ def _fixture(tmp_path: Path) -> dict[str, Path]:
             "catalog_sync_generated_at": "2026-08-19T10:05:00+00:00",
             "source_gate_version": 2,
             "catalog_url_count": 1,
+            "effective_source_count": 1,
         },
     )
     summary = tmp_path / "summary.json"
@@ -83,7 +91,8 @@ def _fixture(tmp_path: Path) -> dict[str, Path]:
     )
     leaderboard = tmp_path / "leaderboard.csv"
     leaderboard.write_text(
-        "rank,title,source,url\n1,Air Fryer Chicken,trusted.example,https://trusted.example/air-fryer-chicken\n",
+        "rank,recipe_id,title,source,url\n"
+        "1,recipe-1,Air Fryer Chicken,trusted.example,https://trusted.example/air-fryer-chicken\n",
         encoding="utf-8",
     )
     authority = tmp_path / "authority.json"
@@ -178,7 +187,8 @@ def test_publish_authority_rejects_ranking_scope_drift(tmp_path: Path) -> None:
 def test_publish_authority_rejects_non_effective_leaderboard_source(tmp_path: Path) -> None:
     paths = _fixture(tmp_path)
     paths["leaderboard"].write_text(
-        "rank,title,source,url\n1,Air Fryer Old,suspended.example,https://suspended.example/air-fryer-old\n",
+        "rank,recipe_id,title,source,url\n"
+        "1,old-1,Air Fryer Old,suspended.example,https://suspended.example/air-fryer-old\n",
         encoding="utf-8",
     )
 
@@ -197,7 +207,8 @@ def test_publish_authority_rejects_strict_vertical_contamination(tmp_path: Path)
         encoding="utf-8",
     )
     paths["leaderboard"].write_text(
-        "rank,title,source,url\n1,Birria Tacos,trusted.example,https://trusted.example/birria-tacos/\n",
+        "rank,recipe_id,title,source,url\n"
+        "1,taco-1,Birria Tacos,trusted.example,https://trusted.example/birria-tacos/\n",
         encoding="utf-8",
     )
 
@@ -208,9 +219,9 @@ def test_publish_authority_rejects_strict_vertical_contamination(tmp_path: Path)
 def test_publish_authority_rejects_leaderboard_count_mismatch(tmp_path: Path) -> None:
     paths = _fixture(tmp_path)
     paths["leaderboard"].write_text(
-        "rank,title,source,url\n"
-        "1,Air Fryer Chicken,trusted.example,https://trusted.example/air-fryer-chicken\n"
-        "2,Air Fryer Potatoes,trusted.example,https://trusted.example/air-fryer-potatoes\n",
+        "rank,recipe_id,title,source,url\n"
+        "1,chicken-1,Air Fryer Chicken,trusted.example,https://trusted.example/air-fryer-chicken\n"
+        "2,potato-1,Air Fryer Potatoes,trusted.example,https://trusted.example/air-fryer-potatoes\n",
         encoding="utf-8",
     )
 
@@ -318,7 +329,8 @@ def test_hourly_refresh_inherits_authority_when_inputs_are_unchanged(tmp_path: P
     summary["targets_this_run"] = 0
     _write(paths["summary"], summary)
     paths["leaderboard"].write_text(
-        "rank,title,source,url\n1,Air Fryer Potatoes,trusted.example,https://trusted.example/air-fryer-potatoes\n",
+        "rank,recipe_id,title,source,url\n"
+        "1,potato-1,Air Fryer Potatoes,trusted.example,https://trusted.example/air-fryer-potatoes\n",
         encoding="utf-8",
     )
     manifest = _manifest_payload()
@@ -383,3 +395,96 @@ def test_invalidation_is_fail_closed_but_ignores_late_race(tmp_path: Path) -> No
         invalidated_at="2026-08-19T10:11:00+00:00",
     )
     assert late["authoritative"] is True
+
+
+@pytest.mark.parametrize(
+    ("authoritative", "current", "recover", "expected"),
+    [
+        (True, True, False, "noop"),
+        (True, False, False, "invalidate"),
+        (False, False, False, "refresh_required"),
+        (False, False, True, "recover"),
+    ],
+)
+def test_evaluate_authority_covers_every_lifecycle_outcome(
+    authoritative: bool,
+    current: bool,
+    recover: bool,
+    expected: str,
+) -> None:
+    assert (
+        evaluate_authority(
+            {"authoritative": authoritative},
+            ranking_current=current,
+            recovery_requested=recover,
+        )
+        == expected
+    )
+
+
+def test_ranking_current_requires_matching_catalog_and_sources() -> None:
+    summary = {
+        "generated_at": "2026-08-19T10:10:00+00:00",
+        "catalog_urls": 2,
+        "configured_sources": 1,
+    }
+    metrics = {
+        "generated_at": "2026-08-19T10:00:00+00:00",
+        "catalog_sync_generated_at": "2026-08-19T10:05:00+00:00",
+        "catalog_url_count": 1,
+        "effective_source_count": 1,
+    }
+    assert ranking_is_current(summary, metrics) is False
+
+
+def test_authority_rejects_corrupt_persisted_inputs(tmp_path: Path) -> None:
+    paths = _fixture(tmp_path)
+    paths["metrics"].write_text("{", encoding="utf-8")
+
+    with pytest.raises(AuthorityError, match="invalid authority input"):
+        invalidate_authority(
+            vertical="air_fryer",
+            metrics_path=paths["metrics"],
+            summary_path=paths["summary"],
+            authority_path=paths["authority"],
+        )
+
+
+def test_authority_rejects_incomplete_leaderboard_identity(tmp_path: Path) -> None:
+    paths = _fixture(tmp_path)
+    paths["leaderboard"].write_text(
+        "rank,recipe_id,title,source,url\n"
+        "1,,Air Fryer Chicken,trusted.example,https://trusted.example/air-fryer-chicken\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(AuthorityError, match="missing identity"):
+        _publish(paths)
+
+
+def test_invalidation_disables_manifest_before_later_write_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    paths = _fixture(tmp_path)
+    real_write = authority_module.atomic_write_json
+
+    def fail_public(path: str | Path, payload: object, **kwargs: object) -> None:
+        if Path(path) == paths["public_authority"]:
+            raise OSError("simulated public authority failure")
+        real_write(path, payload, **kwargs)
+
+    monkeypatch.setattr(authority_module, "atomic_write_json", fail_public)
+    with pytest.raises(OSError, match="simulated public authority failure"):
+        invalidate_authority(
+            vertical="air_fryer",
+            metrics_path=paths["metrics"],
+            summary_path=paths["summary"],
+            authority_path=paths["authority"],
+            public_authority_path=paths["public_authority"],
+            manifest_path=paths["manifest"],
+        )
+
+    manifest = json.loads(paths["manifest"].read_text(encoding="utf-8"))
+    assert manifest["ranked_serving_available"] is False
+    assert manifest["pages"] == []

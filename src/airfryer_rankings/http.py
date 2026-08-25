@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import gzip
-from typing import Iterator
+from io import BytesIO
+from typing import Any, Iterator
 from urllib.robotparser import RobotFileParser
-from xml.etree import ElementTree as ET
 
 import requests
+from lxml import etree as ET
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from .models import HEADERS, SourceConfig
-from .source_security import safe_get
+from .models import SourceConfig
+from .source_security import DEFAULT_MAX_RESPONSE_BYTES, safe_get
+
+MAX_SITEMAP_BYTES = 50 * 1024 * 1024
 
 
 def make_session() -> requests.Session:
@@ -31,14 +34,15 @@ def make_session() -> requests.Session:
     return session
 
 
-def get(session: requests.Session, url: str, timeout: int = 20, headers: dict | None = None) -> requests.Response:
-    merged = dict(HEADERS)
-    if headers:
-        merged.update(headers)
-    response = session.get(url, headers=merged, timeout=timeout)
-    if response.status_code != 304:
-        response.raise_for_status()
-    return response
+def get(
+    session: requests.Session,
+    url: str,
+    timeout: int = 20,
+    headers: dict | None = None,
+    *,
+    max_bytes: int = DEFAULT_MAX_RESPONSE_BYTES,
+) -> requests.Response:
+    return safe_get(session, url, timeout, headers, max_bytes=max_bytes)
 
 
 def get_for_source(
@@ -47,10 +51,10 @@ def get_for_source(
     cfg: SourceConfig,
     timeout: int = 20,
     headers: dict | None = None,
+    *,
+    max_bytes: int = DEFAULT_MAX_RESPONSE_BYTES,
 ) -> requests.Response:
-    if cfg.origin == "discovered":
-        return safe_get(session, url, timeout, headers)
-    return get(session, url, timeout, headers)
+    return get(session, url, timeout, headers, max_bytes=max_bytes)
 
 
 def _robots_policy_parser(robots_url: str, *, allow: bool) -> RobotFileParser:
@@ -108,13 +112,13 @@ def robots_and_sitemaps(session: requests.Session, cfg: SourceConfig) -> tuple[R
     return parser, list(dict.fromkeys(sitemaps)), robots_text, "ok"
 
 
-def _xml_bytes(response: requests.Response, url: str) -> bytes:
+def _xml_bytes(response: requests.Response, url: str, max_bytes: int = MAX_SITEMAP_BYTES) -> bytes:
     content = response.content
     if url.lower().endswith(".gz") or content[:2] == b"\x1f\x8b":
-        try:
-            return gzip.decompress(content)
-        except OSError:
-            return content
+        with gzip.GzipFile(fileobj=BytesIO(content)) as compressed:
+            content = compressed.read(max_bytes + 1)
+    if len(content) > max_bytes:
+        raise ValueError(f"sitemap exceeds {max_bytes} decompressed bytes")
     return content
 
 
@@ -123,18 +127,23 @@ def iter_sitemap_records(
     sitemap_url: str,
     seen: set[str] | None = None,
     max_docs: int = 150,
-    *,
-    safe: bool = False,
+    diagnostics: dict[str, Any] | None = None,
 ) -> Iterator[dict]:
     seen = seen if seen is not None else set()
     if sitemap_url in seen or len(seen) >= max_docs:
         return
     seen.add(sitemap_url)
+    diagnostics = diagnostics if diagnostics is not None else {}
+    diagnostics["attempted"] = int(diagnostics.get("attempted") or 0) + 1
+    errors = diagnostics.setdefault("errors", [])
     try:
-        response = safe_get(session, sitemap_url, 30) if safe else get(session, sitemap_url, 30)
-        root = ET.fromstring(_xml_bytes(response, sitemap_url))
-    except Exception:
+        response = get(session, sitemap_url, 30)
+        parser = ET.XMLParser(resolve_entities=False, no_network=True, recover=False, huge_tree=False)
+        root = ET.fromstring(_xml_bytes(response, sitemap_url), parser=parser)
+    except Exception as exc:
+        errors.append(f"{sitemap_url}:{type(exc).__name__}")
         return
+    diagnostics["succeeded"] = int(diagnostics.get("succeeded") or 0) + 1
 
     tag = root.tag.lower()
     if tag.endswith("sitemapindex"):
@@ -145,7 +154,7 @@ def iter_sitemap_records(
                     loc = elem.text.strip()
                     break
             if loc:
-                yield from iter_sitemap_records(session, loc, seen, max_docs=max_docs, safe=safe)
+                yield from iter_sitemap_records(session, loc, seen, max_docs=max_docs, diagnostics=diagnostics)
     else:
         for child in list(root):
             loc = ""

@@ -85,9 +85,7 @@ def build_empirical_uncertainty(
         times = pair_times.get(label, [])
         gaps = pair_gaps_hours.get(label, [])
         unique_recipes = len(recipe_ids.get(label, set()))
-        history_span_days = (
-            (max(times) - min(times)).total_seconds() / 86400.0 if len(times) >= 2 else 0.0
-        )
+        history_span_days = (max(times) - min(times)).total_seconds() / 86400.0 if len(times) >= 2 else 0.0
         if values:
             rmse = math.sqrt(sum(value * value for value in values) / len(values))
             sigma = pstdev(values) if len(values) > 1 else abs(values[0])
@@ -220,7 +218,9 @@ def build_historical_metrics(
             metrics["review_growth_30d"] = (
                 current["rating_count"] - thirty["rating_count"] if thirty and thirty is not current else None
             )
-            metrics["rating_trend_30d"] = current["rating"] - thirty["rating"] if thirty and thirty is not current else None
+            metrics["rating_trend_30d"] = (
+                current["rating"] - thirty["rating"] if thirty and thirty is not current else None
+            )
             last_30 = [row for row in observations_for_recipe if row["timestamp"] >= now - timedelta(days=30)]
             metrics["rating_slope_30d_per_day"] = _linear_slope(last_30, "rating")
             metrics["review_slope_30d_per_day"] = _linear_slope(last_30, "rating_count")

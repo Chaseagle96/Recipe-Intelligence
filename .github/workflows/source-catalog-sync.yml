@@ -1,6 +1,7 @@
 name: Recipe Intelligence Source Catalog Sync
 
 on:
+  # zizmor: ignore[dangerous-triggers] workflow_run is gated to successful same-repository main pushes below.
   workflow_run:
     workflows: ["Recipe Intelligence Source Expansion"]
     types: [completed]
@@ -26,32 +27,36 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
-# Catalog Sync mutates both vertical URL catalogs and shared source-expansion
-# diagnostics. Production therefore shares the repository-state mutation domain
-# with Source Expansion and both ranking refresh workflows. At most one production
-# mutation runs at a time; pull-request validation stays isolated per workflow/ref.
+# Catalog Sync and Source Expansion share source-network state. Pull-request
+# validation stays isolated per workflow/ref and never receives write permission.
 concurrency:
-  group: ${{ github.event_name == 'pull_request' && format('{0}-{1}', github.workflow, github.ref) || 'recipe-intelligence-production-state' }}
+  group: ${{ github.event_name == 'pull_request' && format('{0}-{1}', github.workflow, github.ref) || 'recipe-intelligence-source-network-state' }}
   cancel-in-progress: false
 
 jobs:
-  sync:
+  validate:
     if: >-
       github.event_name != 'workflow_run' ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event != 'pull_request' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: read
     steps:
       - name: Checkout main
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
 
       - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.12'
           cache: pip
@@ -64,6 +69,9 @@ jobs:
           ruff check
           scripts/sync_promoted_source_catalogs.py
           src/airfryer_rankings/source_catalog_sync.py
+
+      - name: Check formatting
+        run: ruff format --check src tests scripts
           src/airfryer_rankings/url_normalization.py
           src/airfryer_rankings/discovery.py
           tests/test_source_catalog_sync.py
@@ -75,9 +83,74 @@ jobs:
       - name: Run catalog sync regression tests
         run: PYTHONPATH=src pytest tests/test_source_catalog_sync.py tests/test_url_normalization.py
 
+  sync:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - vertical: air-fryer
+            config_slug: air_fryer
+            state: data/state.json
+            metrics: output/source_expansion.json
+          - vertical: slow-cooker
+            config_slug: slow_cooker
+            state: verticals/slow_cooker/data/state.json
+            metrics: verticals/slow_cooker/output/source_expansion.json
+    concurrency:
+      group: recipe-intelligence-${{ matrix.vertical }}-state
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build vertical-scoped catalog sync configuration
+        env:
+          CATALOG_CONFIG: output/catalog-sync-${{ matrix.vertical }}.yaml
+          CATALOG_VERTICAL: ${{ matrix.config_slug }}
+        run: |
+          PYTHONPATH=src python - <<'PY'
+          import os
+          from pathlib import Path
+
+          import yaml
+
+          source = Path('config/source_discovery.yaml')
+          config = yaml.safe_load(source.read_text(encoding='utf-8')) or {}
+          vertical = os.environ['CATALOG_VERTICAL']
+          verticals = config.get('verticals') or {}
+          if vertical not in verticals:
+              raise SystemExit(f'Unknown catalog-sync vertical: {vertical}')
+          config['verticals'] = {vertical: verticals[vertical]}
+          target = Path(os.environ['CATALOG_CONFIG'])
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_text(yaml.safe_dump(config, sort_keys=False), encoding='utf-8')
+          print(f'Catalog sync configuration limited to {vertical}: {target}')
+          PY
+
       - name: Check source-expansion gate readiness
         id: gate
-        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           readiness="$(PYTHONPATH=src python - <<'PY'
@@ -116,21 +189,27 @@ jobs:
           echo "Source gate ready for catalog sync: $readiness"
 
       - name: Explain deferred catalog sync
-        if: github.event_name != 'pull_request' && steps.gate.outputs.ready != 'true'
+        if: steps.gate.outputs.ready != 'true'
         run: >-
           echo 'Catalog sync is intentionally deferred because checked-in source-expansion evidence
           does not yet match the configured source gate. A successful Source Expansion run on main
           will retrigger this workflow through workflow_run.'
 
       - name: Sync promoted publishers into URL catalogs
-        if: github.event_name != 'pull_request' && steps.gate.outputs.ready == 'true'
-        run: PYTHONPATH=src python scripts/sync_promoted_source_catalogs.py --mode auto
+        if: steps.gate.outputs.ready == 'true'
+        run: >-
+          PYTHONPATH=src python scripts/sync_promoted_source_catalogs.py
+          --config "output/catalog-sync-${{ matrix.vertical }}.yaml"
+          --mode auto
 
       - name: Validate persistent catalogs
-        if: github.event_name != 'pull_request' && steps.gate.outputs.ready == 'true'
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          CATALOG_VERTICAL: ${{ matrix.config_slug }}
         run: |
           PYTHONPATH=src python - <<'PY'
           import json
+          import os
           import yaml
           from pathlib import Path
           from airfryer_rankings.models import load_sources
@@ -139,43 +218,44 @@ jobs:
 
           config = yaml.safe_load(Path('config/source_discovery.yaml').read_text(encoding='utf-8')) or {}
           expected_gate = int(config.get('source_gate_version') or 0)
-          checks = [
-              ('air_fryer', Path('config/sources.yaml'), Path('data/source_registry.json'), Path('data/state.json'), Path('output/source_expansion.json')),
-              ('slow_cooker', Path('config/verticals/slow_cooker/sources.yaml'), Path('verticals/slow_cooker/data/source_registry.json'), Path('verticals/slow_cooker/data/state.json'), Path('verticals/slow_cooker/output/source_expansion.json')),
-          ]
-          for vertical, sources_path, registry_path, state_path, metrics_path in checks:
-              registry = load_source_registry(registry_path, vertical)
-              base = load_sources(sources_path, include_discovered=False)
-              effective = effective_source_configs(base, registry)
-              auto = [source for source in effective if source.origin == 'discovered']
-              state = json.loads(state_path.read_text(encoding='utf-8'))
-              metrics = json.loads(metrics_path.read_text(encoding='utf-8'))
-              catalog = state.get('url_catalog', {})
-              assert int(registry['source_gate_version']) == expected_gate
-              assert int(metrics['source_gate_version']) == expected_gate
-              assert int(metrics['catalog_url_count']) == len(catalog)
-              assert all(key == normalize_discovered_url(key) for key in catalog), (
-                  vertical, 'persistent URL catalog contains non-normalized aliases'
+          checks = {
+              'air_fryer': (Path('config/sources.yaml'), Path('data/source_registry.json'), Path('data/state.json'), Path('output/source_expansion.json')),
+              'slow_cooker': (Path('config/verticals/slow_cooker/sources.yaml'), Path('verticals/slow_cooker/data/source_registry.json'), Path('verticals/slow_cooker/data/state.json'), Path('verticals/slow_cooker/output/source_expansion.json')),
+          }
+          vertical = os.environ['CATALOG_VERTICAL']
+          sources_path, registry_path, state_path, metrics_path = checks[vertical]
+          registry = load_source_registry(registry_path, vertical)
+          base = load_sources(sources_path, include_discovered=False)
+          effective = effective_source_configs(base, registry)
+          auto = [source for source in effective if source.origin == 'discovered']
+          state = json.loads(state_path.read_text(encoding='utf-8'))
+          metrics = json.loads(metrics_path.read_text(encoding='utf-8'))
+          catalog = state.get('url_catalog', {})
+          assert int(registry['source_gate_version']) == expected_gate
+          assert int(metrics['source_gate_version']) == expected_gate
+          assert int(metrics['catalog_url_count']) == len(catalog)
+          assert all(key == normalize_discovered_url(key) for key in catalog), (
+              vertical, 'persistent URL catalog contains non-normalized aliases'
+          )
+          for source in auto:
+              assert any(row.get('source') == source.domain for row in catalog.values()), (
+                  vertical, source.domain, 'promoted source has no persistent catalog URLs'
               )
-              for source in auto:
-                  assert any(row.get('source') == source.domain for row in catalog.values()), (
-                      vertical, source.domain, 'promoted source has no persistent catalog URLs'
-                  )
-              print(
-                  vertical,
-                  'gate=', expected_gate,
-                  'effective=', len(effective),
-                  'auto=', len(auto),
-                  'catalog=', len(catalog),
-                  'coalesced=', metrics.get('catalog_urls_coalesced', 0),
-              )
+          print(
+              vertical,
+              'gate=', expected_gate,
+              'effective=', len(effective),
+              'auto=', len(auto),
+              'catalog=', len(catalog),
+              'coalesced=', metrics.get('catalog_urls_coalesced', 0),
+          )
           PY
 
       - name: Upload catalog sync diagnostics
-        if: always() && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: recipe-intelligence-source-catalog-sync-${{ github.run_number }}
+          name: recipe-intelligence-source-catalog-sync-${{ github.run_number }}-${{ matrix.vertical }}
           retention-days: 30
           if-no-files-found: ignore
           path: |
@@ -184,18 +264,33 @@ jobs:
             verticals/slow_cooker/output/source_expansion.json
 
       - name: Commit synchronized URL catalogs
-        if: github.event_name != 'pull_request' && steps.gate.outputs.ready == 'true'
+        if: steps.gate.outputs.ready == 'true'
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/state.json verticals/slow_cooker/data/state.json
-          git add output/source_expansion.json output/source_expansion_all.json
-          git add verticals/slow_cooker/output/source_expansion.json
+          git add "${{ matrix.state }}" "${{ matrix.metrics }}" output/source_expansion_all.json
           if git diff --cached --quiet; then
             echo 'No promoted-source catalog changes to commit.'
             exit 0
           fi
-          git commit -m 'Normalize promoted recipe URL catalogs'
+          git commit -m 'Normalize ${{ matrix.vertical }} promoted recipe URL catalog'
           git pull --rebase origin main
           git push origin HEAD:main
+
+  dispatch-invalidation:
+    if: needs.sync.result == 'success' && needs.sync.outputs.ready == 'true'
+    needs: sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Dispatch authority invalidation after ready catalog sync
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh workflow run authority-invalidate.yml
+          --repo "$GITHUB_REPOSITORY"
+          --ref main

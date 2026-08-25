@@ -89,7 +89,9 @@ def _future_targets(
     }
 
 
-def _configuration_grid(model_payload: dict[str, Any], active: ModelParameters, max_configs: int = 96) -> list[ModelParameters]:
+def _configuration_grid(
+    model_payload: dict[str, Any], active: ModelParameters, max_configs: int = 96
+) -> list[ModelParameters]:
     raw_grid = model_payload.get("backtest_grid", {}) or {}
     values = {
         "max_source_bias": raw_grid.get("max_source_bias", [active.max_source_bias]),

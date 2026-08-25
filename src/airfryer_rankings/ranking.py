@@ -98,7 +98,9 @@ def bayesian_rank(
             days = (current_seen - previous_seen).total_seconds() / 86400.0
             if days > 0:
                 velocity = (int(row["rating_count"]) - int(previous_count)) / days
-        row["rating_change"] = None if item.get("previous_rating") is None else raw_rating - float(item["previous_rating"])
+        row["rating_change"] = (
+            None if item.get("previous_rating") is None else raw_rating - float(item["previous_rating"])
+        )
         row["review_count_change"] = None if previous_count is None else int(row["rating_count"]) - int(previous_count)
         row["review_velocity_per_day"] = velocity
         row["evidence_grade"] = evidence_grade(item)

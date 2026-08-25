@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .models import SourceConfig, load_sources
+from .persistence import PersistenceError, atomic_write_json, atomic_write_text, load_json_object
 from .source_registry import load_source_registry
 from .storage import load_state
 
@@ -27,16 +28,57 @@ def _read_json(path: str | Path) -> dict[str, Any]:
     if not target.exists():
         return {}
     try:
-        payload = json.loads(target.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {}
-    return payload if isinstance(payload, dict) else {}
+        return load_json_object(target)
+    except PersistenceError as exc:
+        raise AuthorityError(f"invalid authority input: {target}") from exc
 
 
 def _write_json(path: str | Path, payload: dict[str, Any]) -> None:
-    target = Path(path)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
+    atomic_write_json(path, payload, default=str)
+
+
+def ranking_is_current(
+    summary: dict[str, Any],
+    metrics: dict[str, Any],
+    state: dict[str, Any] | None = None,
+) -> bool:
+    """Return whether the ranking covers the newest synchronized source catalog."""
+    ranking_at = _parse_dt(summary.get("generated_at"))
+    input_times = (
+        _parse_dt(metrics.get("generated_at")),
+        _parse_dt(metrics.get("catalog_sync_generated_at")),
+    )
+    newest_input_at = max((value for value in input_times if value is not None), default=None)
+    if ranking_at is None or newest_input_at is None or ranking_at < newest_input_at:
+        return False
+    counts = (
+        summary.get("catalog_urls"),
+        metrics.get("catalog_url_count"),
+        summary.get("configured_sources"),
+        metrics.get("effective_source_count"),
+    )
+    try:
+        normalized = [int(value) for value in counts if isinstance(value, (int, str))]
+        if len(normalized) != len(counts):
+            return False
+        summary_catalog, metrics_catalog, summary_sources, metrics_sources = normalized
+        if summary_catalog != metrics_catalog or summary_sources != metrics_sources:
+            return False
+        return state is None or len(state.get("url_catalog", {}) or {}) == summary_catalog
+    except (TypeError, ValueError):
+        return False
+
+
+def evaluate_authority(
+    authority: dict[str, Any],
+    *,
+    ranking_current: bool,
+    recovery_requested: bool = False,
+) -> str:
+    """Return the one canonical authority lifecycle decision."""
+    if authority.get("authoritative") is True:
+        return "noop" if ranking_current else "invalidate"
+    return "recover" if recovery_requested else "refresh_required"
 
 
 def _parse_dt(value: Any) -> datetime | None:
@@ -109,14 +151,32 @@ def _validate_leaderboard(
     source_map = {source.domain.lower().strip(): source for source in sources}
     leaderboard_sources: set[str] = set()
     vertical_mismatches: list[str] = []
+    recipe_ids: set[str] = set()
+    urls: set[str] = set()
+    ranks: list[int] = []
     row_count = 0
     try:
         with target.open("r", encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle)
-            if not reader.fieldnames or "source" not in reader.fieldnames:
-                raise AuthorityError("leaderboard is missing required source column")
+            required_columns = {"rank", "recipe_id", "source", "url"}
+            missing_columns = required_columns.difference(reader.fieldnames or [])
+            if missing_columns:
+                raise AuthorityError("leaderboard is missing required columns: " + ", ".join(sorted(missing_columns)))
             for row in reader:
                 row_count += 1
+                recipe_id = str(row.get("recipe_id") or "").strip()
+                url = str(row.get("url") or "").strip()
+                try:
+                    rank = int(str(row.get("rank") or ""))
+                except ValueError as exc:
+                    raise AuthorityError(f"leaderboard row {row_count} has invalid rank") from exc
+                if not recipe_id or not url:
+                    raise AuthorityError(f"leaderboard row {row_count} is missing identity")
+                if recipe_id in recipe_ids or url in urls:
+                    raise AuthorityError(f"leaderboard row {row_count} duplicates an identity")
+                recipe_ids.add(recipe_id)
+                urls.add(url)
+                ranks.append(rank)
                 source = str(row.get("source") or "").lower().strip()
                 if not source:
                     raise AuthorityError(f"leaderboard row {row_count} is missing source")
@@ -132,9 +192,7 @@ def _validate_leaderboard(
                 except re.error as exc:
                     raise AuthorityError(f"invalid strict vertical include pattern for {source}: {exc}") from exc
                 if not matches_vertical:
-                    vertical_mismatches.append(
-                        f"{source}:{str(row.get('title') or row.get('url') or '')[:100]}"
-                    )
+                    vertical_mismatches.append(f"{source}:{str(row.get('title') or row.get('url') or '')[:100]}")
     except UnicodeDecodeError as exc:
         raise AuthorityError(f"leaderboard is not valid UTF-8 CSV: {target}") from exc
 
@@ -142,10 +200,11 @@ def _validate_leaderboard(
         raise AuthorityError(
             f"leaderboard row count does not match ranking summary: leaderboard={row_count} summary={expected_count}"
         )
+    if ranks != list(range(1, row_count + 1)):
+        raise AuthorityError("leaderboard ranks must be unique, ordered, and contiguous from 1")
     if vertical_mismatches:
         raise AuthorityError(
-            "leaderboard contains recipes outside strict vertical policy: "
-            + ", ".join(vertical_mismatches[:10])
+            "leaderboard contains recipes outside strict vertical policy: " + ", ".join(vertical_mismatches[:10])
         )
     return leaderboard_sources
 
@@ -214,7 +273,8 @@ def _write_unavailable_dashboard(
     vertical = html.escape(str(authority.get("vertical") or "Recipe Intelligence"))
     invalidated_at = html.escape(str(authority.get("invalidated_at") or "unknown"))
     reason = html.escape(str(authority.get("reason") or "ranking authority invalidated"))
-    dashboard.write_text(
+    atomic_write_text(
+        dashboard,
         "<!doctype html>\n"
         '<html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
@@ -229,7 +289,6 @@ def _write_unavailable_dashboard(
         f"<p><strong>Reason:</strong> {reason}</p>"
         f"<p><strong>Invalidated at:</strong> {invalidated_at}</p>"
         "</main></body></html>\n",
-        encoding="utf-8",
     )
 
 
@@ -277,9 +336,9 @@ def publish_authority(
         raise AuthorityError(f"catalog mismatch: summary={summary_catalog_count} current={raw_catalog_count}")
 
     ranking_scope = state.get("effective_source_domains")
-    persisted_source_domains = sorted(
-        {str(domain) for domain in ranking_scope if str(domain)}
-    ) if isinstance(ranking_scope, list) else []
+    persisted_source_domains = (
+        sorted({str(domain) for domain in ranking_scope if str(domain)}) if isinstance(ranking_scope, list) else []
+    )
     if persisted_source_domains != source_domains:
         raise AuthorityError(
             "ranking source scope does not match current effective allowlist: "
@@ -295,9 +354,7 @@ def publish_authority(
     source_gate_version = int(registry.get("source_gate_version") or 0)
     metrics_gate_version = int(metrics.get("source_gate_version") or 0)
     if source_gate_version <= 0 or metrics_gate_version != source_gate_version:
-        raise AuthorityError(
-            f"source gate mismatch: registry={source_gate_version} metrics={metrics_gate_version}"
-        )
+        raise AuthorityError(f"source gate mismatch: registry={source_gate_version} metrics={metrics_gate_version}")
 
     expansion_at = _parse_dt(metrics.get("generated_at"))
     catalog_sync_at = _parse_dt(metrics.get("catalog_sync_generated_at"))
@@ -305,9 +362,7 @@ def publish_authority(
     if expansion_at is None:
         raise AuthorityError("source-expansion generated_at is missing")
     if catalog_sync_at is None or catalog_sync_at < expansion_at:
-        raise AuthorityError(
-            "catalog synchronization does not postdate the latest source-expansion generation"
-        )
+        raise AuthorityError("catalog synchronization does not postdate the latest source-expansion generation")
     if ranking_at is None or ranking_at < catalog_sync_at:
         raise AuthorityError("ranking generation predates the latest catalog synchronization")
 
@@ -412,21 +467,12 @@ def invalidate_authority(
 ) -> dict[str, Any]:
     summary = _read_json(summary_path)
     metrics = _read_json(metrics_path)
-    ranking_at = _parse_dt(summary.get("generated_at"))
-    expansion_at = _parse_dt(metrics.get("generated_at"))
-    catalog_sync_at = _parse_dt(metrics.get("catalog_sync_generated_at"))
-    newest_input_at = max(
-        (value for value in (expansion_at, catalog_sync_at) if value is not None),
-        default=None,
-    )
-
     existing = _read_json(authority_path)
-    if ranking_at is not None and newest_input_at is not None and ranking_at >= newest_input_at:
-        if (
-            existing.get("authoritative") is True
-            and existing.get("authority_contract_version") == AUTHORITY_CONTRACT_VERSION
-        ):
-            return existing
+    if (
+        existing.get("authority_contract_version") == AUTHORITY_CONTRACT_VERSION
+        and evaluate_authority(existing, ranking_current=ranking_is_current(summary, metrics)) == "noop"
+    ):
+        return existing
 
     timestamp = invalidated_at or datetime.now(timezone.utc).isoformat()
     authority: dict[str, Any] = {
@@ -440,12 +486,12 @@ def invalidate_authority(
         "catalog_sync_generated_at": metrics.get("catalog_sync_generated_at"),
         "last_ranking_generated_at": summary.get("generated_at"),
     }
+    _update_manifest(manifest_path, authority, serving_available=False)
+    _write_unavailable_dashboard(manifest_path, authority)
+    if public_authority_path:
+        _write_json(public_authority_path, authority)
+    _write_json(authority_path, authority)
     if summary:
         summary["authority"] = authority
         _write_json(summary_path, summary)
-    _write_json(authority_path, authority)
-    if public_authority_path:
-        _write_json(public_authority_path, authority)
-    _update_manifest(manifest_path, authority, serving_available=False)
-    _write_unavailable_dashboard(manifest_path, authority)
     return authority

@@ -357,7 +357,10 @@ def test_auto_source_degrades_suspends_and_recovers_with_hysteresis() -> None:
         "recipes": {},
         "url_catalog": {},
         "source_history": [
-            {"run_at": f"2026-08-{day:02d}T00:00:00+00:00", "coverage": [{"source": "auto.example", "status": "degraded"}]}
+            {
+                "run_at": f"2026-08-{day:02d}T00:00:00+00:00",
+                "coverage": [{"source": "auto.example", "status": "degraded"}],
+            }
             for day in range(3, 8)
         ],
     }
@@ -409,7 +412,10 @@ def test_pinned_source_is_never_automatically_suspended() -> None:
         "recipes": {},
         "url_catalog": {},
         "source_history": [
-            {"run_at": f"2026-08-{day:02d}T00:00:00+00:00", "coverage": [{"source": "pinned.example", "status": "degraded"}]}
+            {
+                "run_at": f"2026-08-{day:02d}T00:00:00+00:00",
+                "coverage": [{"source": "pinned.example", "status": "degraded"}],
+            }
             for day in range(3, 10)
         ],
     }
@@ -450,7 +456,9 @@ def _integration_config(tmp_path: Path) -> Path:
     base_sources = tmp_path / "sources.yaml"
     base_sources.write_text("sources:\n  - domain: pinned.example\n", encoding="utf-8")
     state = tmp_path / "state.json"
-    state.write_text(json.dumps({"recipes": {}, "url_catalog": {}, "source_history": [], "schema_version": 4}), encoding="utf-8")
+    state.write_text(
+        json.dumps({"recipes": {}, "url_catalog": {}, "source_history": [], "schema_version": 4}), encoding="utf-8"
+    )
     config = {
         "source_gate_version": 2,
         "aggregate_output_path": str(tmp_path / "aggregate.json"),
@@ -472,11 +480,19 @@ def _integration_config(tmp_path: Path) -> Path:
         "verticals": {
             "air_fryer": {
                 "name": "Air Fryer",
+                "root_path": str(tmp_path),
                 "base_sources_path": str(base_sources),
+                "model_config_path": str(tmp_path / "model.yaml"),
+                "storage_config_path": str(tmp_path / "storage.yaml"),
                 "state_path": str(state),
                 "registry_path": str(tmp_path / "registry.json"),
                 "output_dir": str(tmp_path / "output"),
                 "events_dir": str(tmp_path / "events"),
+                "docs_root": str(tmp_path / "docs"),
+                "manifest_path": str(tmp_path / "docs/api/manifest.json"),
+                "authority_path": str(tmp_path / "output/authority.json"),
+                "public_authority_path": str(tmp_path / "docs/api/authority.json"),
+                "summary_path": str(tmp_path / "output/summary.json"),
                 "include_pattern": r"air[- ]?fry(?:er|ing)",
                 "query_terms": ["air fryer recipes"],
             }
@@ -485,6 +501,55 @@ def _integration_config(tmp_path: Path) -> Path:
     path = tmp_path / "source_discovery.yaml"
     path.write_text(yaml.safe_dump(config), encoding="utf-8")
     return path
+
+
+def test_source_expansion_resolves_vertical_paths_from_config_location(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = Path(__file__).resolve().parents[1] / "config/source_discovery.yaml"
+    monkeypatch.chdir(tmp_path)
+
+    result = run_source_expansion(
+        config_path,
+        mode="smoke",
+        dry_run=True,
+        run_at="2026-08-24T00:00:00+00:00",
+    )
+
+    assert set(result["verticals"]) == {"air_fryer", "slow_cooker"}
+
+
+def test_source_expansion_deadline_starts_before_discovery_network_phases(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import airfryer_rankings.source_expansion as expansion
+
+    clock = {"now": 0.0}
+    calls: list[str] = []
+
+    def search(*args, deadline=None, **kwargs) -> None:
+        calls.append("search")
+        assert deadline == 30.0
+        clock["now"] = deadline
+
+    monkeypatch.setattr(expansion.time, "monotonic", lambda: clock["now"])
+    monkeypatch.setattr(expansion, "_discover_search_candidates", search)
+    monkeypatch.setattr(
+        expansion,
+        "_discover_outbound_candidates",
+        lambda *args, **kwargs: calls.append("outbound"),
+    )
+
+    run_source_expansion(
+        _integration_config(tmp_path),
+        mode="daily",
+        dry_run=True,
+        run_at="2026-08-24T00:00:00+00:00",
+    )
+
+    assert calls == ["search"]
 
 
 def test_mocked_integration_unknown_source_persists_and_promotes(
@@ -519,7 +584,9 @@ def test_mocked_integration_unknown_source_persists_and_promotes(
         "qualify_candidate",
         lambda *args, **kwargs: (_strong_metrics(), {"include_pattern": r"air[- ]?fry(?:er|ing)"}),
     )
-    monkeypatch.setattr(expansion, "_promoted_catalog_discovery", lambda *args, **kwargs: {"status": "ok", "new_urls": 5})
+    monkeypatch.setattr(
+        expansion, "_promoted_catalog_discovery", lambda *args, **kwargs: {"status": "ok", "new_urls": 5}
+    )
 
     first = run_source_expansion(config_path, mode="daily", seed_file=seed_path, run_at="2026-08-19T00:00:00+00:00")
     assert first["verticals"]["air_fryer"]["candidate_domains_quarantined"] >= 1
@@ -530,8 +597,12 @@ def test_mocked_integration_unknown_source_persists_and_promotes(
     persisted = load_source_registry(tmp_path / "registry.json", "air_fryer")
     assert persisted["candidates"]["quality.example"]["status"] == PROMOTED
     assert second["verticals"]["air_fryer"]["candidate_domains_promoted"] == 1
+    assert second["verticals"]["air_fryer"]["manual_source_count"] == 1
     base = load_sources(tmp_path / "sources.yaml", include_discovered=False)
-    assert [source.domain for source in effective_source_configs(base, persisted)] == ["pinned.example", "quality.example"]
+    assert [source.domain for source in effective_source_configs(base, persisted)] == [
+        "pinned.example",
+        "quality.example",
+    ]
     assert (tmp_path / "output" / "source_expansion.json").exists()
     assert list((tmp_path / "events").rglob("*.ndjson"))
 

@@ -144,15 +144,29 @@ def write_workbook(
     contract_frame = _df((contracts or {}).get("contracts", []))
 
     trend_chart = pd.DataFrame()
-    if not observations.empty and not rankings.empty and {"recipe_id", "timestamp", "rating_count"}.issubset(observations.columns):
+    if (
+        not observations.empty
+        and not rankings.empty
+        and {"recipe_id", "timestamp", "rating_count"}.issubset(observations.columns)
+    ):
         top_ids = [str(value) for value in rankings.head(10)["recipe_id"].tolist()] if "recipe_id" in rankings else []
         trend_source = observations[observations["recipe_id"].astype(str).isin(top_ids)].copy()
         if not trend_source.empty:
-            labels = dict(zip(rankings["recipe_id"].astype(str), rankings["title"].astype(str), strict=True)) if {"recipe_id", "title"}.issubset(rankings.columns) else {}
-            trend_source["label"] = trend_source["recipe_id"].astype(str).map(labels).fillna(trend_source["recipe_id"].astype(str))
+            labels = (
+                dict(zip(rankings["recipe_id"].astype(str), rankings["title"].astype(str), strict=True))
+                if {"recipe_id", "title"}.issubset(rankings.columns)
+                else {}
+            )
+            trend_source["label"] = (
+                trend_source["recipe_id"].astype(str).map(labels).fillna(trend_source["recipe_id"].astype(str))
+            )
             trend_source["timestamp"] = pd.to_datetime(trend_source["timestamp"], errors="coerce", utc=True)
             trend_source = trend_source.dropna(subset=["timestamp"])
-            trend_chart = trend_source.pivot_table(index="timestamp", columns="label", values="rating_count", aggfunc="last").sort_index().reset_index()
+            trend_chart = (
+                trend_source.pivot_table(index="timestamp", columns="label", values="rating_count", aggfunc="last")
+                .sort_index()
+                .reset_index()
+            )
             if "timestamp" in trend_chart:
                 trend_chart["timestamp"] = trend_chart["timestamp"].dt.tz_localize(None)
 
@@ -165,16 +179,33 @@ def write_workbook(
             movers = rankings[rankings["movement"].notna()].copy()
             if not movers.empty:
                 movers["abs_movement"] = movers["movement"].abs()
-                movers = movers.sort_values(["abs_movement", "rating_count"], ascending=[False, False]).drop(columns=["abs_movement"])
+                movers = movers.sort_values(["abs_movement", "rating_count"], ascending=[False, False]).drop(
+                    columns=["abs_movement"]
+                )
         if "previous_rank" in rankings:
             entrants = rankings[rankings["previous_rank"].isna()].head(100).copy()
         provenance_columns = [
             column
             for column in (
-                "rank", "title", "source", "rating", "rating_count", "category_expected_rating", "source_bias",
-                "adjusted_rating", "posterior_mean", "uncertainty_penalty", "uncertainty_method", "evidence_penalty",
-                "evidence_grade", "hierarchical_score", "rank_confidence", "rank_range_low", "rank_range_high",
-                "rank_provenance", "url",
+                "rank",
+                "title",
+                "source",
+                "rating",
+                "rating_count",
+                "category_expected_rating",
+                "source_bias",
+                "adjusted_rating",
+                "posterior_mean",
+                "uncertainty_penalty",
+                "uncertainty_method",
+                "evidence_penalty",
+                "evidence_grade",
+                "hierarchical_score",
+                "rank_confidence",
+                "rank_range_low",
+                "rank_range_high",
+                "rank_provenance",
+                "url",
             )
             if column in rankings.columns
         ]
@@ -182,10 +213,23 @@ def write_workbook(
         time_columns = [
             column
             for column in (
-                "rank", "title", "source", "review_growth_7d", "review_growth_30d", "rating_trend_30d",
-                "rating_slope_30d_per_day", "review_slope_30d_per_day", "review_velocity_7d",
-                "review_acceleration_14d", "page_change_count_30d", "last_material_page_change_at",
-                "rating_change_point_30d", "rating_change_point_delta", "peak_rank", "rank_volatility", "url",
+                "rank",
+                "title",
+                "source",
+                "review_growth_7d",
+                "review_growth_30d",
+                "rating_trend_30d",
+                "rating_slope_30d_per_day",
+                "review_slope_30d_per_day",
+                "review_velocity_7d",
+                "review_acceleration_14d",
+                "page_change_count_30d",
+                "last_material_page_change_at",
+                "rating_change_point_30d",
+                "rating_change_point_delta",
+                "peak_rank",
+                "rank_volatility",
+                "url",
             )
             if column in rankings.columns
         ]

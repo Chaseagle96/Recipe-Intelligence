@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 
 from airfryer_rankings.authority import AuthorityError, invalidate_authority, publish_authority
 

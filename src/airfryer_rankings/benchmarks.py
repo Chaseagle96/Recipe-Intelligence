@@ -112,7 +112,9 @@ def evaluate_dedupe_benchmark(path: str | Path, threshold: float = DEDUPE_THRESH
         "negative_score_mean": sum(negative_scores) / len(negative_scores) if negative_scores else None,
         "threshold_curve": _threshold_curve(results),
         "by_kind": _group_metrics(results, threshold),
-        "target_adjudicated_pairs": int(payload.get("target_adjudicated_pairs", 500)) if isinstance(payload, dict) else 500,
+        "target_adjudicated_pairs": int(payload.get("target_adjudicated_pairs", 500))
+        if isinstance(payload, dict)
+        else 500,
     }
     return summary, results
 

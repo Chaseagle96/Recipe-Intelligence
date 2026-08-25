@@ -25,16 +25,6 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["airfryer_rankings"]
-omit = [
-  "src/airfryer_rankings/dashboard.py",
-  # CLI/orchestration entrypoints are validated through GitHub Actions smoke/live runs.
-  # Keep the 82% branch-coverage gate focused on reusable library logic rather than
-  # counting network-provider/process wiring as unit-test debt. Source-expansion
-  # behavior still has dedicated unit, fixture, integration, lint, mypy, and CI tests.
-  "src/airfryer_rankings/run.py",
-  "src/airfryer_rankings/fixture_capture.py",
-  "src/airfryer_rankings/source_expansion.py",
-]
 
 [tool.coverage.report]
 show_missing = true
@@ -55,9 +45,6 @@ ignore = ["B008"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["B011"]
-# Legacy monolithic regression module retains a harmless compatibility import;
-# new V5 tests are held to the normal F401 rule.
-"tests/test_core.py" = ["B011", "F401"]
 
 [tool.mypy]
 python_version = "3.12"

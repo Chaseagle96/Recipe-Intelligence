@@ -62,7 +62,9 @@ def load_model_config(path: str | Path = "config/model.yaml") -> tuple[ModelPara
         evidence_confidence_target=float(
             raw.get("evidence_confidence_target", DEFAULT_MODEL_PARAMETERS.evidence_confidence_target)
         ),
-        evidence_penalty_scale=float(raw.get("evidence_penalty_scale", DEFAULT_MODEL_PARAMETERS.evidence_penalty_scale)),
+        evidence_penalty_scale=float(
+            raw.get("evidence_penalty_scale", DEFAULT_MODEL_PARAMETERS.evidence_penalty_scale)
+        ),
         uncertainty_cap=float(raw.get("uncertainty_cap", DEFAULT_MODEL_PARAMETERS.uncertainty_cap)),
         source_prior_strength=float(raw.get("source_prior_strength", DEFAULT_MODEL_PARAMETERS.source_prior_strength)),
         category_prior_strength=float(

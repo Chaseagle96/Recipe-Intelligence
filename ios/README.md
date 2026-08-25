@@ -1,10 +1,10 @@
 # Recipe Intelligence iOS
 
-Recipe Intelligence for iOS is the personal decision layer on top of the repository's evidence-driven recipe rankings. It targets iOS 17+ with SwiftUI and SwiftData, while the production build and CI use Xcode 27 so current iOS releases receive Apple's newest system appearance and controls. iOS 26+ receives the app's custom Liquid Glass surfaces; older supported releases retain system-material fallbacks.
+Recipe Intelligence for iOS is the personal decision layer on top of the repository's evidence-driven recipe rankings. It targets iOS 17+ with SwiftUI and SwiftData, while the production build and CI use Xcode 26 so current iOS releases receive Apple's newest system appearance and controls. iOS 26+ receives the app's custom Liquid Glass surfaces; older supported releases retain system-material fallbacks.
 
 ## Open and run
 
-Open `RecipeIntelligence.xcodeproj` in Xcode 27 or newer. Select the `RecipeIntelligence` scheme and an iPhone simulator. No signing team is required for simulator builds.
+Open `RecipeIntelligence.xcodeproj` in Xcode 26 or newer. Select the `RecipeIntelligence` scheme and an iPhone simulator. No signing team is required for simulator builds.
 
 The production app reads the vertical catalog from:
 
@@ -29,7 +29,7 @@ Remote Recipe Intelligence evidence is conceptually separate from private user-o
 
 The app follows Apple's platform-first Liquid Glass model rather than drawing a custom imitation of the system material everywhere.
 
-- Building with Xcode 27 lets system `TabView`, navigation bars, toolbars, sheets, menus and controls adopt the current platform appearance automatically.
+- Building with Xcode 26 lets system `TabView`, navigation bars, toolbars, sheets, menus and controls adopt the current platform appearance automatically.
 - Custom glass is concentrated on high-value interaction surfaces: vertical filters, recipe ranking/metadata panels, decision controls, detail actions, elimination controls and selected cards.
 - Adjacent custom glass controls use `GlassEffectContainer` so rendering and transitions behave as one visual group.
 - `.glass` and `.glassProminent` button styles are used on iOS 26+ with ordinary bordered-button fallbacks for iOS 17-25.
@@ -106,4 +106,4 @@ Every swipe action has an explicit button equivalent. Recipe cards expose VoiceO
 
 ## Validation
 
-`.github/workflows/ios.yml` runs on GitHub's Xcode 27 runner, verifies the selected Xcode version, performs a real simulator build, executes unit plus UI tests, builds an unsigned iPhone app, and packages an unsigned IPA artifact. Python CI independently validates the ranked and full-corpus serving projections and ensures Air Fryer/Slow Cooker ranking pipelines remain healthy.
+`.github/workflows/ios.yml` runs on GitHub's macOS 26 runner with Xcode 26, verifies the selected Xcode version, performs a real simulator build, executes unit plus UI tests, builds an unsigned iPhone app, and packages an unsigned IPA artifact. Python CI independently validates the ranked and full-corpus serving projections and ensures Air Fryer/Slow Cooker ranking pipelines remain healthy.

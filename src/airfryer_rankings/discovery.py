@@ -6,12 +6,14 @@ from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 
-from .http import get, get_for_source, iter_sitemap_records, make_session, robots_and_sitemaps
+from .http import get_for_source, iter_sitemap_records, make_session, robots_and_sitemaps
 from .models import UA, SourceConfig
 from .url_normalization import normalize_discovered_url
 
 
-def _catalog_update(state: dict, cfg: SourceConfig, url: str, run_at: str, *, lastmod: str = "", method: str = "sitemap") -> bool:
+def _catalog_update(
+    state: dict, cfg: SourceConfig, url: str, run_at: str, *, lastmod: str = "", method: str = "sitemap"
+) -> bool:
     catalog = state.setdefault("url_catalog", {})
     normalized_url = normalize_discovered_url(url)
     existing = catalog.get(normalized_url, {})
@@ -60,7 +62,9 @@ def _looks_recipe_link(
         return False
     parsed = urlparse(url)
     path = parsed.path.lower()
-    if path in ("", "/") or any(x in path for x in ("/category/", "/tag/", "/author/", "/about", "/contact", "/privacy")):
+    if path in ("", "/") or any(
+        x in path for x in ("/category/", "/tag/", "/author/", "/about", "/contact", "/privacy")
+    ):
         return False
     if include_re.search(url + " " + text):
         return True
@@ -71,27 +75,23 @@ def _looks_recipe_link(
 
 
 def _discovery_get(session, url: str, cfg: SourceConfig, timeout: int = 25):
-    if cfg.origin == "discovered":
-        return get_for_source(session, url, cfg, timeout)
-    return get(session, url, timeout)
+    return get_for_source(session, url, cfg, timeout)
 
 
-def _sitemap_records(session, sitemap: str, cfg: SourceConfig, seen_sitemaps: set[str], max_docs: int):
-    if cfg.origin == "discovered":
-        return iter_sitemap_records(
-            session,
-            sitemap,
-            seen=seen_sitemaps,
-            max_docs=max_docs,
-            safe=True,
-        )
-    # Keep the pinned/manual adapter call signature unchanged. The additional
-    # safety keyword is only required for dynamically discovered publishers.
+def _sitemap_records(
+    session,
+    sitemap: str,
+    cfg: SourceConfig,
+    seen_sitemaps: set[str],
+    max_docs: int,
+    diagnostics: dict,
+):
     return iter_sitemap_records(
         session,
         sitemap,
         seen=seen_sitemaps,
         max_docs=max_docs,
+        diagnostics=diagnostics,
     )
 
 
@@ -107,14 +107,19 @@ def discover_source_urls(
     parser, sitemaps, _, robots_status = robots_and_sitemaps(session, cfg)
     include_re = _compile_include_pattern(cfg)
     seen_sitemaps: set[str] = set()
+    diagnostics: dict = {"attempted": 0, "succeeded": 0, "errors": []}
     max_docs = 300 if mode == "deep" else 120
     matched = 0
     newly_discovered = 0
     discovery_page_links = 0
-    match_cap = 20000 if mode == "deep" and global_max_urls is None else max(2000, (global_max_urls or cfg.max_urls) * (12 if mode == "deep" else 6))
+    match_cap = (
+        20000
+        if mode == "deep" and global_max_urls is None
+        else max(2000, (global_max_urls or cfg.max_urls) * (12 if mode == "deep" else 6))
+    )
 
     for sitemap in sitemaps:
-        for record in _sitemap_records(session, sitemap, cfg, seen_sitemaps, max_docs):
+        for record in _sitemap_records(session, sitemap, cfg, seen_sitemaps, max_docs, diagnostics):
             url = normalize_discovered_url(record["url"])
             if not _same_domain(url, cfg.domain) or not include_re.search(url):
                 continue
@@ -123,7 +128,9 @@ def discover_source_urls(
                     continue
             except Exception:
                 pass
-            newly_discovered += int(_catalog_update(state, cfg, url, run_at, lastmod=record.get("lastmod", ""), method="sitemap"))
+            newly_discovered += int(
+                _catalog_update(state, cfg, url, run_at, lastmod=record.get("lastmod", ""), method="sitemap")
+            )
             matched += 1
             if matched >= match_cap:
                 break
@@ -136,10 +143,13 @@ def discover_source_urls(
                 continue
         except Exception:
             pass
+        diagnostics["attempted"] += 1
         try:
             response = _discovery_get(session, discovery_url, cfg, 25)
             soup = BeautifulSoup(response.text, "lxml")
-        except Exception:
+            diagnostics["succeeded"] += 1
+        except Exception as exc:
+            diagnostics["errors"].append(f"{discovery_url}:{type(exc).__name__}")
             continue
         for anchor in soup.find_all("a", href=True):
             href = normalize_discovered_url(urljoin(discovery_url, str(anchor.get("href") or "").strip()))
@@ -155,6 +165,9 @@ def discover_source_urls(
             newly_discovered += int(_catalog_update(state, cfg, href, run_at, method="category"))
             discovery_page_links += 1
 
+    status = robots_status
+    if status == "ok" and diagnostics["errors"]:
+        status = "degraded"
     return {
         "source": cfg.domain,
         "discovered_urls": matched + discovery_page_links,
@@ -162,5 +175,6 @@ def discover_source_urls(
         "sitemap_docs": len(seen_sitemaps),
         "robots_status": robots_status,
         "elapsed_seconds": round(time.monotonic() - started, 2),
-        "status": "ok",
+        "status": status,
+        "discovery_errors": diagnostics["errors"],
     }

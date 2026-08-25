@@ -55,4 +55,4 @@ The workflows share source code and quality tooling, but they do not share mutab
 
 ## Adding another vertical
 
-A future vertical should follow the Slow Cooker pattern: create its own source/model/storage configuration, working tree, benchmark ledgers, and workflow, and provide an explicit discovery pattern. It should not mix observations or prior distributions with another cooking method merely because the underlying scoring implementation is shared.
+A future vertical should follow the Slow Cooker pattern: add one canonical `VerticalDefinition`, create its source/model/storage configuration, isolated working tree, benchmark ledgers, authority/mobile serving outputs, and a thin caller of `_vertical-refresh.yml`, then provide an explicit discovery pattern. Operators and validators should resolve paths through that definition rather than duplicating filenames in Python or shell code. It should not mix observations or prior distributions with another cooking method merely because the underlying scoring implementation is shared.

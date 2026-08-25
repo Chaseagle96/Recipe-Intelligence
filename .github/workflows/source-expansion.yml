@@ -42,34 +42,34 @@ on:
       - 'scripts/retire_nonpublisher_candidates.py'
 
 permissions:
-  contents: write
+  contents: read
 
-# Source Expansion mutates registries, source-event history, and diagnostics used
-# by both verticals. Production therefore shares the repository-state mutation
-# domain with both ranking refreshes and Source Catalog Sync. At most one production
-# mutation runs at a time; newer queued work may coalesce an older pending run.
+# Source Expansion and Source Catalog Sync share source-network state. Ranking
+# refreshes use independent vertical-scoped mutation domains.
 concurrency:
-  group: ${{ github.event_name == 'pull_request' && format('{0}-{1}', github.workflow, github.ref) || 'recipe-intelligence-production-state' }}
+  group: ${{ github.event_name == 'pull_request' && format('{0}-{1}', github.workflow, github.ref) || 'recipe-intelligence-source-network-state' }}
   cancel-in-progress: false
 
 env:
   RECIPE_INTELLIGENCE_BASE_SOURCES_ONLY: '1'
-  BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
-  GOOGLE_CSE_API_KEY: ${{ secrets.GOOGLE_CSE_API_KEY }}
-  GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
 
 jobs:
-  source-expansion:
+  validate:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      mode: ${{ steps.mode.outputs.mode }}
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.12'
           cache: pip
@@ -83,6 +83,9 @@ jobs:
       - name: Lint source and tests
         run: ruff check src tests scripts/source_registry_admin.py scripts/retire_nonpublisher_candidates.py
 
+      - name: Check formatting
+        run: ruff format --check src tests scripts
+
       - name: Static type analysis
         run: mypy src/airfryer_rankings
 
@@ -91,18 +94,22 @@ jobs:
 
       - name: Resolve source-expansion mode
         id: mode
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+          INPUT_MODE: ${{ inputs.mode }}
         shell: bash
         run: |
           mode=daily
           production=true
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          if [ "$EVENT_NAME" = "pull_request" ]; then
             mode=smoke
             production=false
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            mode="${{ inputs.mode }}"
-          elif [ "${{ github.event.schedule }}" = "53 11 * * 0" ]; then
+          elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            mode="$INPUT_MODE"
+          elif [ "$EVENT_SCHEDULE" = "53 11 * * 0" ]; then
             mode=deep
-          elif [ "${{ github.event_name }}" = "push" ]; then
+          elif [ "$EVENT_NAME" = "push" ]; then
             mode=deep
           fi
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
@@ -127,33 +134,72 @@ jobs:
           PYTHONPATH=src python -m airfryer_rankings.source_expansion --mode smoke --dry-run
           PYTHONPATH=src python scripts/retire_nonpublisher_candidates.py --dry-run
 
+      - name: Upload pull-request source-expansion diagnostics
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: recipe-intelligence-source-expansion-${{ github.run_number }}-validation
+          retention-days: 30
+          if-no-files-found: ignore
+          path: |
+            output/source_expansion.json
+            output/source_expansion_all.json
+            verticals/slow_cooker/output/source_expansion.json
+
+  expand:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
       - name: Retire non-publisher candidates
-        if: steps.mode.outputs.production == 'true'
         run: PYTHONPATH=src python scripts/retire_nonpublisher_candidates.py
 
       - name: Discover and qualify recipe publishers
-        if: steps.mode.outputs.production == 'true'
         shell: bash
+        env:
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          GOOGLE_CSE_API_KEY: ${{ secrets.GOOGLE_CSE_API_KEY }}
+          GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+          EVENT_NAME: ${{ github.event_name }}
+          MODE: ${{ needs.validate.outputs.mode }}
         run: |
           seed_args=()
-          if [ "${{ github.event_name }}" = "push" ] && [ -f config/source_discovery_bootstrap.yaml ]; then
+          if [ "$EVENT_NAME" = "push" ] && [ -f config/source_discovery_bootstrap.yaml ]; then
             seed_args=(--seed-file config/source_discovery_bootstrap.yaml)
           fi
           PYTHONPATH=src python -m airfryer_rankings.source_expansion \
-            --mode "${{ steps.mode.outputs.mode }}" \
+            --mode "$MODE" \
             "${seed_args[@]}"
 
       - name: Validate source registries and observability
-        if: steps.mode.outputs.production == 'true'
         run: |
           PYTHONPATH=src python -m airfryer_rankings.ops validate-source-network \
             --config config/source_discovery.yaml
 
       - name: Upload source-expansion diagnostics
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: recipe-intelligence-source-expansion-${{ github.run_number }}-${{ steps.mode.outputs.mode || 'validation' }}
+          name: recipe-intelligence-source-expansion-${{ github.run_number }}-${{ needs.validate.outputs.mode }}
           retention-days: 30
           if-no-files-found: ignore
           path: |
@@ -166,7 +212,8 @@ jobs:
             verticals/slow_cooker/data/source_events
 
       - name: Commit source registries and audit evidence
-        if: steps.mode.outputs.production == 'true'
+        env:
+          MODE: ${{ needs.validate.outputs.mode }}
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
@@ -181,6 +228,6 @@ jobs:
             echo 'No source-expansion changes to commit.'
             exit 0
           fi
-          git commit -m "Expand qualified recipe source network (${{ steps.mode.outputs.mode }})"
+          git commit -m "Expand qualified recipe source network ($MODE)"
           git pull --rebase origin main
           git push origin HEAD:main

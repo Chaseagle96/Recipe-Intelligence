@@ -8,6 +8,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 
 from .verticals import get_vertical, load_verticals
@@ -79,12 +80,14 @@ def run_vertical(
 ) -> int:
     definition = get_vertical(vertical, config_path)
     repo_root = _repo_root(config_path)
+    smoke_dir: TemporaryDirectory[str] | None = None
     if mode == "smoke" and sources is None:
         smoke_sources = {
             "air_fryer": """defaults:\n  max_urls: 2\n  delay: 0.05\nsources:\n  - domain: pinchofyum.com\n  - domain: budgetbytes.com\n    discovery_urls:\n      - https://www.budgetbytes.com/category/recipes/air-fryer/\n  - domain: skinnytaste.com\n    discovery_urls:\n      - https://www.skinnytaste.com/recipes/air-fryer/\n""",
             "slow_cooker": """defaults:\n  max_urls: 2\n  delay: 0.05\n  include_pattern: '(?:slow[-_ ]?cook(?:er|ing|ed)|crock[-_ ]?pot)'\n  allow_unmatched_discovery_links: false\nsources:\n  - domain: skinnytaste.com\n    discovery_urls:\n      - https://www.skinnytaste.com/recipes/slow-cooker/\n  - domain: budgetbytes.com\n    discovery_urls:\n      - https://www.budgetbytes.com/category/recipes/slow-cooker/\n  - domain: wellplated.com\n    discovery_urls:\n      - https://www.wellplated.com/category/recipes-by-type/slow-cooker/\n""",
         }[definition.id]
-        smoke_path = Path("/tmp") / f"recipe-intelligence-{definition.id}-smoke-sources.yaml"
+        smoke_dir = TemporaryDirectory(prefix=f"recipe-intelligence-{definition.id}-smoke-")
+        smoke_path = Path(smoke_dir.name) / "sources.yaml"
         smoke_path.write_text(smoke_sources, encoding="utf-8")
         sources = smoke_path
     environment = os.environ.copy()
@@ -111,13 +114,19 @@ def run_vertical(
             or (["--hourly-limit", "100"] if definition.id == "slow_cooker" else [])
         ),
     ]
-    result = subprocess.run(command, cwd=definition.root_path, env=environment, check=False)
+    generated = definition.output_root / "air_fryer_rankings.xlsx"
     if definition.id == "slow_cooker":
-        generated = definition.output_root / "air_fryer_rankings.xlsx"
-        target = definition.output_root / "slow_cooker_rankings.xlsx"
-        if generated.exists() and not target.exists():
-            generated.rename(target)
-    return result.returncode
+        generated.unlink(missing_ok=True)
+    try:
+        result = subprocess.run(command, cwd=definition.root_path, env=environment, check=False)
+        if definition.id == "slow_cooker" and result.returncode == 0:
+            if not generated.is_file():
+                raise FileNotFoundError(f"ranking workbook was not generated: {generated}")
+            generated.replace(definition.output_root / "slow_cooker_rankings.xlsx")
+        return result.returncode
+    finally:
+        if smoke_dir is not None:
+            smoke_dir.cleanup()
 
 
 def publish_authority(config_path: str | Path, vertical: str) -> int:
@@ -151,6 +160,31 @@ def publish_authority(config_path: str | Path, vertical: str) -> int:
         str(definition.manifest_path),
     ]
     return subprocess.run(command, cwd=repo_root, env=environment, check=False).returncode
+
+
+def authority_decision(
+    config_path: str | Path,
+    vertical: str,
+    *,
+    recovery_requested: bool = False,
+) -> dict[str, Any]:
+    from .authority import evaluate_authority, ranking_is_current
+    from .persistence import load_json_object
+    from .storage import load_state
+
+    definition = get_vertical(vertical, config_path)
+    authority = load_json_object(definition.authority_path) if definition.authority_path.exists() else {}
+    summary = load_json_object(definition.summary_path)
+    metrics = load_json_object(definition.output_root / "source_expansion.json")
+    current = ranking_is_current(summary, metrics, load_state(definition.state_path))
+    return {
+        "decision": evaluate_authority(
+            authority,
+            ranking_current=current,
+            recovery_requested=recovery_requested,
+        ),
+        "ranking_current": current,
+    }
 
 
 def rebuild_mobile_corpus(config_path: str | Path, vertical: str) -> int:
@@ -201,6 +235,11 @@ def _parser() -> argparse.ArgumentParser:
     authority.add_argument("--vertical", required=True)
     authority.add_argument("--config", default="config/source_discovery.yaml", type=Path)
 
+    decision = commands.add_parser("authority-decision")
+    decision.add_argument("--vertical", required=True)
+    decision.add_argument("--config", default="config/source_discovery.yaml", type=Path)
+    decision.add_argument("--recovery-requested", action="store_true")
+
     corpus = commands.add_parser("rebuild-mobile-corpus")
     corpus.add_argument("--vertical", required=True)
     corpus.add_argument("--config", default="config/source_discovery.yaml", type=Path)
@@ -228,6 +267,17 @@ def main() -> None:
         raise SystemExit(run_vertical(args.config, args.vertical, args.mode, args.sources, args.extra))
     elif args.command == "publish-authority":
         raise SystemExit(publish_authority(args.config, args.vertical))
+    elif args.command == "authority-decision":
+        print(
+            json.dumps(
+                authority_decision(
+                    args.config,
+                    args.vertical,
+                    recovery_requested=args.recovery_requested,
+                ),
+                sort_keys=True,
+            )
+        )
     elif args.command == "rebuild-mobile-corpus":
         raise SystemExit(rebuild_mobile_corpus(args.config, args.vertical))
     else:

@@ -7,7 +7,9 @@ from typing import Iterable
 from .models import RecipeRow, parse_dt
 
 
-def detect_anomalies(state: dict, rows: Iterable[RecipeRow], coverage: Iterable[dict], events: Iterable[dict], run_at: str) -> list[dict]:
+def detect_anomalies(
+    state: dict, rows: Iterable[RecipeRow], coverage: Iterable[dict], events: Iterable[dict], run_at: str
+) -> list[dict]:
     anomalies: list[dict] = []
     for row in rows:
         stored = state.get("recipes", {}).get(row.recipe_id, {})
@@ -16,17 +18,65 @@ def detect_anomalies(state: dict, rows: Iterable[RecipeRow], coverage: Iterable[
         if previous_count is not None:
             delta = int(row.rating_count) - int(previous_count)
             if delta < 0:
-                anomalies.append({"timestamp": run_at, "severity": "high", "type": "review_count_decrease", "recipe_id": row.recipe_id, "title": row.title, "source": row.source, "url": row.canonical_url or row.url, "detail": f"{previous_count} -> {row.rating_count}"})
+                anomalies.append(
+                    {
+                        "timestamp": run_at,
+                        "severity": "high",
+                        "type": "review_count_decrease",
+                        "recipe_id": row.recipe_id,
+                        "title": row.title,
+                        "source": row.source,
+                        "url": row.canonical_url or row.url,
+                        "detail": f"{previous_count} -> {row.rating_count}",
+                    }
+                )
             elif int(previous_count) > 0 and delta > max(250, int(previous_count) * 0.50):
                 previous_seen = parse_dt(stored.get("previous_seen_at"))
                 current_seen = parse_dt(run_at)
-                hours = (current_seen - previous_seen).total_seconds() / 3600 if previous_seen and current_seen else None
-                anomaly_type = "hourly_review_count_spike" if hours is not None and hours <= 2.0 else "review_count_spike"
-                anomalies.append({"timestamp": run_at, "severity": "medium", "type": anomaly_type, "recipe_id": row.recipe_id, "title": row.title, "source": row.source, "url": row.canonical_url or row.url, "detail": f"+{delta} reviews" + (f" in {hours:.1f}h" if hours is not None else "")})
+                hours = (
+                    (current_seen - previous_seen).total_seconds() / 3600 if previous_seen and current_seen else None
+                )
+                anomaly_type = (
+                    "hourly_review_count_spike" if hours is not None and hours <= 2.0 else "review_count_spike"
+                )
+                anomalies.append(
+                    {
+                        "timestamp": run_at,
+                        "severity": "medium",
+                        "type": anomaly_type,
+                        "recipe_id": row.recipe_id,
+                        "title": row.title,
+                        "source": row.source,
+                        "url": row.canonical_url or row.url,
+                        "detail": f"+{delta} reviews" + (f" in {hours:.1f}h" if hours is not None else ""),
+                    }
+                )
         if previous_rating is not None and abs(row.normalized_rating - float(previous_rating)) >= 0.25:
-            anomalies.append({"timestamp": run_at, "severity": "medium", "type": "rating_shift", "recipe_id": row.recipe_id, "title": row.title, "source": row.source, "url": row.canonical_url or row.url, "detail": f"{float(previous_rating):.2f} -> {row.normalized_rating:.2f}"})
+            anomalies.append(
+                {
+                    "timestamp": run_at,
+                    "severity": "medium",
+                    "type": "rating_shift",
+                    "recipe_id": row.recipe_id,
+                    "title": row.title,
+                    "source": row.source,
+                    "url": row.canonical_url or row.url,
+                    "detail": f"{float(previous_rating):.2f} -> {row.normalized_rating:.2f}",
+                }
+            )
         if row.evidence_status == "conflict" or row.evidence_confidence < 0.60:
-            anomalies.append({"timestamp": run_at, "severity": "high", "type": "evidence_conflict", "recipe_id": row.recipe_id, "title": row.title, "source": row.source, "url": row.canonical_url or row.url, "detail": f"confidence={row.evidence_confidence:.2f}"})
+            anomalies.append(
+                {
+                    "timestamp": run_at,
+                    "severity": "high",
+                    "type": "evidence_conflict",
+                    "recipe_id": row.recipe_id,
+                    "title": row.title,
+                    "source": row.source,
+                    "url": row.canonical_url or row.url,
+                    "detail": f"confidence={row.evidence_confidence:.2f}",
+                }
+            )
 
     canonical_map: dict[str, list[dict]] = defaultdict(list)
     for recipe in state.get("recipes", {}).values():
@@ -36,11 +86,33 @@ def detect_anomalies(state: dict, rows: Iterable[RecipeRow], coverage: Iterable[
     for canonical, group in canonical_map.items():
         recipe_ids = {item.get("recipe_id") for item in group}
         if len(recipe_ids) > 1:
-            anomalies.append({"timestamp": run_at, "severity": "medium", "type": "canonical_collision", "recipe_id": "", "title": "", "source": " | ".join(sorted({item.get("source", "") for item in group})), "url": canonical, "detail": f"{len(recipe_ids)} recipe IDs share canonical URL"})
+            anomalies.append(
+                {
+                    "timestamp": run_at,
+                    "severity": "medium",
+                    "type": "canonical_collision",
+                    "recipe_id": "",
+                    "title": "",
+                    "source": " | ".join(sorted({item.get("source", "") for item in group})),
+                    "url": canonical,
+                    "detail": f"{len(recipe_ids)} recipe IDs share canonical URL",
+                }
+            )
 
     for item in coverage:
         if item.get("status") not in ("ok", None, "not_checked_this_run"):
-            anomalies.append({"timestamp": run_at, "severity": "high", "type": "source_failure", "recipe_id": "", "title": "", "source": item.get("source", ""), "url": "", "detail": str(item.get("status"))})
+            anomalies.append(
+                {
+                    "timestamp": run_at,
+                    "severity": "high",
+                    "type": "source_failure",
+                    "recipe_id": "",
+                    "title": "",
+                    "source": item.get("source", ""),
+                    "url": "",
+                    "detail": str(item.get("status")),
+                }
+            )
     tracked_events = {
         "recipe_disappeared",
         "malformed_rating_scale",
@@ -110,7 +182,9 @@ def _last_checked_by_source(state: dict) -> dict[str, dict]:
     return result
 
 
-def source_health_summary(state: dict, coverage: Iterable[dict], configured_sources: Iterable, run_at: str) -> tuple[list[dict], dict]:
+def source_health_summary(
+    state: dict, coverage: Iterable[dict], configured_sources: Iterable, run_at: str
+) -> tuple[list[dict], dict]:
     now = parse_dt(run_at) or datetime.now(timezone.utc)
     current = {item.get("source", ""): item for item in coverage}
     last_checked = _last_checked_by_source(state)

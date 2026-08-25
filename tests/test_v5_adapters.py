@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import gzip
 from dataclasses import asdict
 from io import BytesIO
 
+import pytest
 from PIL import Image
 
 import airfryer_rankings.crawler as crawler
@@ -25,7 +27,9 @@ class FakeParser:
 
 
 class FakeResponse:
-    def __init__(self, *, status_code: int = 200, text: str = "", content: bytes | None = None, headers: dict | None = None):
+    def __init__(
+        self, *, status_code: int = 200, text: str = "", content: bytes | None = None, headers: dict | None = None
+    ):
         self.status_code = status_code
         self.text = text
         self.content = content if content is not None else text.encode()
@@ -74,20 +78,25 @@ def test_http_robots_and_recursive_sitemap_parsing(monkeypatch):
             text="User-agent: *\nAllow: /\nSitemap: https://example.com/sitemap.xml\n"
         ),
         "https://example.com/sitemap.xml": FakeResponse(
-            content=b'<sitemapindex><sitemap><loc>https://example.com/recipes.xml</loc></sitemap></sitemapindex>'
+            content=b"<sitemapindex><sitemap><loc>https://example.com/recipes.xml</loc></sitemap></sitemapindex>"
         ),
         "https://example.com/recipes.xml": FakeResponse(
-            content=b'<urlset><url><loc>https://example.com/air-fryer-chicken</loc><lastmod>2026-08-18</lastmod></url></urlset>'
+            content=b"<urlset><url><loc>https://example.com/air-fryer-chicken</loc><lastmod>2026-08-18</lastmod></url></urlset>"
         ),
     }
 
-    monkeypatch.setattr(http_client, "get", lambda session, url, timeout=20, headers=None: responses[url])
+    monkeypatch.setattr(
+        http_client,
+        "get",
+        lambda session, url, timeout=20, headers=None, **kwargs: responses[url],
+    )
     parser, sitemaps, robots, status = http_client.robots_and_sitemaps(FakeSession(), SourceConfig("example.com"))
     assert status == "ok"
     assert "Sitemap:" in robots
     assert sitemaps == ["https://example.com/sitemap.xml"]
     assert parser.can_fetch("AirFryerRankingsBot/5.0", "https://example.com/air-fryer-chicken")
-    rows = list(http_client.iter_sitemap_records(FakeSession(), sitemaps[0]))
+    diagnostics = {}
+    rows = list(http_client.iter_sitemap_records(FakeSession(), sitemaps[0], diagnostics=diagnostics))
     assert rows == [
         {
             "url": "https://example.com/air-fryer-chicken",
@@ -95,6 +104,30 @@ def test_http_robots_and_recursive_sitemap_parsing(monkeypatch):
             "sitemap": "https://example.com/recipes.xml",
         }
     ]
+    assert diagnostics == {"attempted": 2, "errors": [], "succeeded": 2}
+
+
+def test_http_routes_all_sources_through_safe_bounded_transport(monkeypatch):
+    calls = []
+
+    def fake_safe_get(session, url, timeout=20, headers=None, *, max_bytes):
+        calls.append((url, max_bytes))
+        return FakeResponse(text="ok")
+
+    monkeypatch.setattr(http_client, "safe_get", fake_safe_get)
+    response = http_client.get_for_source(FakeSession(), "https://example.com/a", SourceConfig("example.com"))
+    assert response.text == "ok"
+    assert calls == [("https://example.com/a", http_client.DEFAULT_MAX_RESPONSE_BYTES)]
+
+
+def test_sitemap_decompression_and_entities_fail_closed(monkeypatch):
+    compressed = FakeResponse(content=gzip.compress(b"x" * 33))
+    with pytest.raises(ValueError, match="decompressed"):
+        http_client._xml_bytes(compressed, "https://example.com/sitemap.xml.gz", max_bytes=32)
+
+    entity_xml = b'<!DOCTYPE x [<!ENTITY e "expanded">]><urlset><url><loc>&e;</loc></url></urlset>'
+    monkeypatch.setattr(http_client, "get", lambda *args, **kwargs: FakeResponse(content=entity_xml))
+    assert list(http_client.iter_sitemap_records(FakeSession(), "https://example.com/sitemap.xml")) == []
 
 
 def test_discovery_combines_sitemap_and_category_links(monkeypatch):
@@ -106,7 +139,7 @@ def test_discovery_combines_sitemap_and_category_links(monkeypatch):
     monkeypatch.setattr(
         discovery,
         "iter_sitemap_records",
-        lambda session, url, seen=None, max_docs=150: iter(
+        lambda session, url, seen=None, max_docs=150, diagnostics=None: iter(
             [
                 {"url": "https://example.com/air-fryer-potatoes", "lastmod": "2026-08-18"},
                 {"url": "https://other.com/air-fryer-nope", "lastmod": ""},
@@ -115,8 +148,8 @@ def test_discovery_combines_sitemap_and_category_links(monkeypatch):
     )
     monkeypatch.setattr(
         discovery,
-        "get",
-        lambda session, url, timeout=25: FakeResponse(
+        "_discovery_get",
+        lambda session, url, cfg, timeout=25: FakeResponse(
             text='<html><a href="/recipes/crispy-chicken">Air Fryer Crispy Chicken</a><a href="/about">About</a></html>'
         ),
     )
@@ -127,6 +160,29 @@ def test_discovery_combines_sitemap_and_category_links(monkeypatch):
     assert result["new_urls"] == 2
     assert "https://example.com/air-fryer-potatoes" in state["url_catalog"]
     assert "https://example.com/recipes/crispy-chicken" in state["url_catalog"]
+
+
+def test_discovery_reports_sitemap_failure_as_degraded(monkeypatch):
+    monkeypatch.setattr(
+        discovery,
+        "robots_and_sitemaps",
+        lambda session, cfg: (FakeParser(), ["https://example.com/broken.xml"], "", "ok"),
+    )
+
+    def failed_sitemap(session, sitemap, cfg, seen, max_docs, diagnostics):
+        diagnostics["attempted"] += 1
+        diagnostics["errors"].append(f"{sitemap}:Timeout")
+        return iter(())
+
+    monkeypatch.setattr(discovery, "_sitemap_records", failed_sitemap)
+    result = discovery.discover_source_urls(
+        SourceConfig("example.com", delay=0),
+        {"url_catalog": {}},
+        "daily",
+        "2026-08-18T20:00:00+00:00",
+    )
+    assert result["status"] == "degraded"
+    assert result["discovery_errors"] == ["https://example.com/broken.xml:Timeout"]
 
 
 def test_crawler_reuses_304_and_detects_structural_changes(monkeypatch):
@@ -148,18 +204,20 @@ def test_crawler_reuses_304_and_detects_structural_changes(monkeypatch):
                 "source": "example.com",
                 "page_hash": "old-page",
                 "dom_fingerprint": "old-dom",
+                "dom_fingerprint_version": 2,
                 "schema_signature": "old-schema",
+                "schema_signature_version": 2,
             },
         },
     }
 
-    def fake_get(session, url, timeout=25, headers=None):
+    def fake_get(session, url, cfg, timeout=25, headers=None, **kwargs):
         if url == existing["url"]:
             assert headers == {"If-None-Match": "abc"}
             return FakeResponse(status_code=304)
         return FakeResponse(status_code=200, text="<html>new</html>", headers={"ETag": "new"})
 
-    monkeypatch.setattr(crawler, "get", fake_get)
+    monkeypatch.setattr(crawler, "get_for_source", fake_get)
     new_row = sample_row("b", "https://example.com/air-fryer-new")
     monkeypatch.setattr(
         crawler,
@@ -169,7 +227,9 @@ def test_crawler_reuses_304_and_detects_structural_changes(monkeypatch):
             {
                 "page_hash": "new-page",
                 "dom_fingerprint": "new-dom",
+                "dom_fingerprint_version": 2,
                 "schema_signature": "new-schema",
+                "schema_signature_version": 2,
                 "recipe_recognized": True,
                 "issues": [],
             },
@@ -185,6 +245,27 @@ def test_crawler_reuses_304_and_detects_structural_changes(monkeypatch):
     assert coverage[0]["dom_structure_changes"] == 1
     assert coverage[0]["schema_structure_changes"] == 1
     assert {event["type"] for event in events} >= {"dom_structure_changed", "schema_structure_changed"}
+
+
+def test_structure_versions_rebaseline_legacy_hashes_and_detect_removal():
+    legacy = {"dom_fingerprint": "old", "schema_signature": "old"}
+    current = {
+        "dom_fingerprint": "new",
+        "dom_fingerprint_version": 2,
+        "schema_signature": "",
+        "schema_signature_version": 2,
+    }
+    assert not crawler._versioned_structure_changed(legacy, current, "dom_fingerprint")
+    assert not crawler._versioned_structure_changed(legacy, current, "schema_signature")
+
+    versioned = {
+        "dom_fingerprint": "old",
+        "dom_fingerprint_version": 2,
+        "schema_signature": "old",
+        "schema_signature_version": 2,
+    }
+    assert crawler._versioned_structure_changed(versioned, current, "dom_fingerprint")
+    assert crawler._versioned_structure_changed(versioned, current, "schema_signature")
 
 
 def test_crawler_records_robots_denial(monkeypatch):
@@ -203,10 +284,10 @@ def test_crawler_records_robots_denial(monkeypatch):
 def test_evidence_jsonld_graph_and_visible_microdata():
     from bs4 import BeautifulSoup
 
-    html = '''<html><body>
+    html = """<html><body>
     <span itemprop="ratingValue" content="4.7"></span><span itemprop="ratingCount">123</span>
     <script type="application/ld+json">{"@graph":[{"@type":"Recipe","name":"A"}]}</script>
-    </body></html>'''
+    </body></html>"""
     soup = BeautifulSoup(html, "lxml")
     objects = list(jsonld_objects(soup))
     assert any(obj.get("@type") == "Recipe" for obj in objects)
@@ -237,6 +318,22 @@ def test_media_hash_and_ambiguous_enrichment(monkeypatch):
     assert stats["image_hash_fetches"] == 2
     assert left.image_perceptual_hash == "f" * 16
     assert right.image_perceptual_hash == "f" * 16
+
+
+def test_media_fetch_uses_the_bounded_safe_transport(monkeypatch):
+    image = Image.new("RGB", (16, 16), "white")
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    calls = []
+
+    def fake_get(session, url, timeout, headers, *, max_bytes):
+        calls.append((url, max_bytes, headers))
+        return FakeResponse(content=buffer.getvalue())
+
+    monkeypatch.setattr(media, "make_session", FakeSession)
+    monkeypatch.setattr(media, "get", fake_get)
+    assert media.fetch_perceptual_hash("https://example.com/image.png", max_bytes=1234)
+    assert calls == [("https://example.com/image.png", 1234, {"Accept": "image/*"})]
 
 
 def test_observability_and_quality_gate_emit_actionable_failures():
@@ -309,9 +406,7 @@ def test_qa_detects_structural_event_and_source_freshness():
     state = {
         "recipes": {},
         "anomaly_history": [],
-        "source_history": [
-            {"run_at": "2026-08-18T19:00:00+00:00", "coverage": [{"source": "x.com", "status": "ok"}]}
-        ],
+        "source_history": [{"run_at": "2026-08-18T19:00:00+00:00", "coverage": [{"source": "x.com", "status": "ok"}]}],
     }
     anomalies = detect_anomalies(
         state,

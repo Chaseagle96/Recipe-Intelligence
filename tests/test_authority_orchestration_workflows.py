@@ -7,13 +7,16 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 def test_authority_invalidation_serializes_full_refresh_dispatch() -> None:
     workflow = (REPO_ROOT / ".github/workflows/authority-invalidate.yml").read_text(encoding="utf-8")
+    catalog = (REPO_ROOT / ".github/workflows/source-catalog-sync.yml").read_text(encoding="utf-8")
 
     assert "actions: write" in workflow
     assert "Dispatch full ranking refresh after invalidation" in workflow
-    assert "github.event.workflow_run.name == 'Recipe Intelligence Source Catalog Sync'" in workflow
+    assert "needs: invalidate" in workflow
     assert "gh workflow run hourly.yml" in workflow
     assert "-f mode=daily" in workflow
     assert "gh workflow run slow-cooker.yml" in workflow
+    assert "Dispatch authority invalidation after ready catalog sync" in catalog
+    assert "gh workflow run authority-invalidate.yml" in catalog
 
     commit_index = workflow.index("Commit authority invalidation when needed")
     dispatch_index = workflow.index("Dispatch full ranking refresh after invalidation")
@@ -30,12 +33,14 @@ def test_authority_invalidation_stages_fail_closed_dashboards() -> None:
 
 def test_source_expansion_does_not_dispatch_full_ranking_early() -> None:
     workflow = (REPO_ROOT / ".github/workflows/authority-invalidate.yml").read_text(encoding="utf-8")
+    catalog = (REPO_ROOT / ".github/workflows/source-catalog-sync.yml").read_text(encoding="utf-8")
 
-    assert "github.event.workflow_run.name == 'Recipe Intelligence Source Expansion'" in workflow
-    dispatch_block = workflow.split("- name: Dispatch full ranking refresh after invalidation", 1)[1]
-    dispatch_condition = dispatch_block.split("env:", 1)[0]
-    assert "Recipe Intelligence Source Catalog Sync" in dispatch_condition
-    assert "Recipe Intelligence Source Expansion" not in dispatch_condition
+    assert "Recipe Intelligence Source Expansion" in workflow
+    assert "github.event_name == 'workflow_run' && needs.invalidate.result == 'success'" in workflow
+    dispatch_job = workflow.split("  dispatch:", 1)[1].split("  explain-source-expansion:", 1)[0]
+    assert "github.event_name == 'workflow_dispatch'" in dispatch_job
+    assert "github.event_name == 'workflow_run'" not in dispatch_job
+    assert "steps.gate.outputs.ready == 'true'" in catalog
 
 
 def test_hourly_authority_defers_only_expected_full_refresh_requirement() -> None:
@@ -46,13 +51,14 @@ def test_hourly_authority_defers_only_expected_full_refresh_requirement() -> Non
 
     assert "id: authority" in shared
     assert expected in shared
-    assert 'inputs.mode }}" = "hourly' in shared
+    assert 'MODE" = "hourly' in shared
     assert "publishable=false" in shared
     assert 'exit "$status"' in shared
 
     for workflow in (air_fryer, slow_cooker):
         assert "uses: ./.github/workflows/_vertical-refresh.yml" in workflow
         assert "mode:" in workflow
+
 
 def test_slow_cooker_manual_source_assertion_is_smoke_only() -> None:
     workflow = (REPO_ROOT / ".github/workflows/slow-cooker.yml").read_text(encoding="utf-8")
@@ -64,6 +70,7 @@ def test_slow_cooker_manual_source_assertion_is_smoke_only() -> None:
     assert "skinnytaste.com" in operations
     assert "budgetbytes.com" in operations
     assert "wellplated.com" in operations
+
 
 def test_authoritative_refresh_is_manual_fallback_only() -> None:
     workflow = (REPO_ROOT / ".github/workflows/authoritative-refresh.yml").read_text(encoding="utf-8")
@@ -79,7 +86,7 @@ def test_authority_self_heal_dispatches_only_stale_verticals() -> None:
     assert "Recipe Intelligence Authority Invalidation" in workflow
     assert "actions: write" in workflow
     assert "jq -e '.authoritative == true and .status == \"authoritative\"'" in workflow
-    assert "gh workflow run \"$workflow\"" in workflow
+    assert 'gh workflow run "$workflow"' in workflow
     assert "-f mode=daily" in workflow
     assert "hourly.yml 'Air Fryer'" in workflow
     assert "slow-cooker.yml 'Slow Cooker'" in workflow

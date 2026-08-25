@@ -78,7 +78,9 @@ def extract_recipe_from_html(
             parse_meta["issues"].append("rating_evidence_conflict")
 
         ingredients_raw = obj.get("recipeIngredient") or []
-        ingredients = tuple(str(value).strip() for value in ingredients_raw) if isinstance(ingredients_raw, list) else ()
+        ingredients = (
+            tuple(str(value).strip() for value in ingredients_raw) if isinstance(ingredients_raw, list) else ()
+        )
         instructions = _instruction_texts(obj)
         image = _image_url(obj)
         title = str(obj.get("name") or (soup.title.string if soup.title else "") or url).strip()

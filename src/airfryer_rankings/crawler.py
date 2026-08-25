@@ -9,7 +9,7 @@ from typing import Any, Iterable
 import requests
 
 from .extract import extract_recipe_from_html
-from .http import get, get_for_source, make_session, robots_and_sitemaps
+from .http import get_for_source, make_session, robots_and_sitemaps
 from .models import UA, RecipeRow, SourceConfig, parse_dt
 
 
@@ -78,7 +78,9 @@ def select_refresh_targets(
             exploration_limit = min(len(exploratory), max(1, hourly_limit // 10))
         validated_limit = min(len(validated), max(0, hourly_limit - exploration_limit))
 
-        def take_balanced(entries: list[dict], limit: int, *, allow_overflow: bool, cap: int | None = None) -> list[dict]:
+        def take_balanced(
+            entries: list[dict], limit: int, *, allow_overflow: bool, cap: int | None = None
+        ) -> list[dict]:
             if limit <= 0 or not entries:
                 return []
             domains = {str(entry.get("source") or "") for entry in entries if entry.get("source")}
@@ -114,7 +116,9 @@ def select_refresh_targets(
         by_source[entry.get("source", "")].append(entry)
     for entries in by_source.values():
         cap = global_max_urls if global_max_urls is not None else len(entries)
-        entries = sorted(entries, key=lambda entry: (_entry_age_hours(entry, "last_checked", now), score(entry)[0]), reverse=True)
+        entries = sorted(
+            entries, key=lambda entry: (_entry_age_hours(entry, "last_checked", now), score(entry)[0]), reverse=True
+        )
         targets.extend(dict(entry) for entry in entries[:cap])
     return targets
 
@@ -134,10 +138,17 @@ def _row_from_existing(recipe: dict, retrieved_at: str, fetch_status: str = "not
         return None
 
 
+def _versioned_structure_changed(entry: dict, current: dict, field: str) -> bool:
+    version_field = f"{field}_version"
+    return bool(
+        entry.get(version_field) == current.get(version_field)
+        and field in entry
+        and entry.get(field) != current.get(field)
+    )
+
+
 def _crawler_get(session, url: str, cfg: SourceConfig, timeout: int = 25, headers: dict | None = None):
-    if cfg.origin == "discovered":
-        return get_for_source(session, url, cfg, timeout, headers=headers)
-    return get(session, url, timeout, headers=headers)
+    return get_for_source(session, url, cfg, timeout, headers=headers)
 
 
 def crawl_targets(
@@ -188,7 +199,8 @@ def crawl_targets(
             entry = catalog.setdefault(url, dict(target))
             cached_recipe = recipes.get(entry.get("recipe_id", ""), {})
             force_evidence_refresh = bool(
-                cached_recipe.get("needs_evidence_backfill") or cached_recipe.get("evidence_status") == "legacy_unverified"
+                cached_recipe.get("needs_evidence_backfill")
+                or cached_recipe.get("evidence_status") == "legacy_unverified"
             )
             if force_evidence_refresh:
                 metrics["legacy_backfill_targets"] += 1
@@ -231,19 +243,15 @@ def crawl_targets(
                     metrics["recognized_recipes"] += 1
                 page_hash = parse_meta.get("page_hash", "")
                 dom_fingerprint = parse_meta.get("dom_fingerprint", "")
+                dom_fingerprint_version = parse_meta.get("dom_fingerprint_version")
                 schema_signature = parse_meta.get("schema_signature", "")
+                schema_signature_version = parse_meta.get("schema_signature_version")
                 content_changed = bool(entry.get("page_hash") and page_hash and entry.get("page_hash") != page_hash)
-                dom_changed = bool(
-                    entry.get("dom_fingerprint")
-                    and dom_fingerprint
-                    and entry.get("dom_fingerprint") != dom_fingerprint
+                dom_changed = _versioned_structure_changed(entry, parse_meta, "dom_fingerprint")
+                schema_changed = _versioned_structure_changed(entry, parse_meta, "schema_signature")
+                priority = (
+                    "contract_changed" if dom_changed or schema_changed else "changed" if content_changed else "stable"
                 )
-                schema_changed = bool(
-                    entry.get("schema_signature")
-                    and schema_signature
-                    and entry.get("schema_signature") != schema_signature
-                )
-                priority = "contract_changed" if dom_changed or schema_changed else "changed" if content_changed else "stable"
                 entry_status = "ok" if row else "recognized_no_verified_rating" if recognized else "no_verified_rating"
                 entry.update(
                     {
@@ -253,7 +261,9 @@ def crawl_targets(
                         "last_modified": str(response.headers.get("Last-Modified") or ""),
                         "page_hash": page_hash,
                         "dom_fingerprint": dom_fingerprint,
+                        "dom_fingerprint_version": dom_fingerprint_version,
                         "schema_signature": schema_signature,
+                        "schema_signature_version": schema_signature_version,
                         "priority": priority,
                         "missing_count": 0,
                         "recipe_recognized": recognized,
@@ -266,7 +276,9 @@ def crawl_targets(
                     events.append({"type": "dom_structure_changed", "source": domain, "url": url, "timestamp": run_at})
                 if schema_changed:
                     metrics["schema_structure_changes"] += 1
-                    events.append({"type": "schema_structure_changed", "source": domain, "url": url, "timestamp": run_at})
+                    events.append(
+                        {"type": "schema_structure_changed", "source": domain, "url": url, "timestamp": run_at}
+                    )
                 for issue in parse_meta.get("issues", []):
                     events.append({"type": issue, "source": domain, "url": url, "timestamp": run_at})
                 if row:
@@ -291,14 +303,38 @@ def crawl_targets(
                 if http_status in (404, 410):
                     metrics["missing"] += 1
                     entry["missing_count"] = int(entry.get("missing_count", 0)) + 1
-                    events.append({"type": "recipe_disappeared", "source": domain, "url": url, "status": http_status, "timestamp": run_at})
+                    events.append(
+                        {
+                            "type": "recipe_disappeared",
+                            "source": domain,
+                            "url": url,
+                            "status": http_status,
+                            "timestamp": run_at,
+                        }
+                    )
                 else:
                     metrics["errors"] += 1
-                    events.append({"type": "fetch_error", "source": domain, "url": url, "status": http_status, "timestamp": run_at})
+                    events.append(
+                        {
+                            "type": "fetch_error",
+                            "source": domain,
+                            "url": url,
+                            "status": http_status,
+                            "timestamp": run_at,
+                        }
+                    )
             except Exception as exc:
                 metrics["errors"] += 1
                 entry.update({"last_checked": run_at, "last_status": f"error:{type(exc).__name__}"})
-                events.append({"type": "fetch_error", "source": domain, "url": url, "error": type(exc).__name__, "timestamp": run_at})
+                events.append(
+                    {
+                        "type": "fetch_error",
+                        "source": domain,
+                        "url": url,
+                        "error": type(exc).__name__,
+                        "timestamp": run_at,
+                    }
+                )
             if cfg.delay > 0:
                 time.sleep(cfg.delay)
 

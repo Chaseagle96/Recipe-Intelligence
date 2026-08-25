@@ -13,6 +13,7 @@ from requests.cookies import extract_cookies_to_jar
 from .models import HEADERS
 
 _REDIRECT_STATUSES = {301, 302, 303, 307, 308}
+DEFAULT_MAX_RESPONSE_BYTES = 10 * 1024 * 1024
 _PRIVATE_HOST_SUFFIXES = (".internal", ".local", ".localhost", ".home", ".lan")
 _BLOCKED_EXACT_HOSTS = {"localhost", "localhost.localdomain", "metadata.google.internal"}
 _METADATA_IPS = {
@@ -73,7 +74,32 @@ class UnsafeNetworkTarget(ValueError):
     """Raised when an untrusted discovery URL could reach a non-public network target."""
 
 
+class ResponseTooLarge(requests.RequestException):
+    """Raised before an external response can exceed its configured memory budget."""
+
+
 Resolver = Callable[..., list[tuple]]
+
+
+def _materialize_bounded(response: requests.Response, max_bytes: int) -> None:
+    if max_bytes <= 0:
+        raise ValueError("max_bytes must be positive")
+    try:
+        declared_size = int(response.headers.get("Content-Length") or 0)
+    except (TypeError, ValueError):
+        declared_size = 0
+    if declared_size > max_bytes:
+        response.close()
+        raise ResponseTooLarge(
+            f"response declared {declared_size} bytes; limit is {max_bytes}",
+            response=response,
+        )
+    content = response.raw.read(max_bytes + 1, decode_content=True)
+    if len(content) > max_bytes:
+        response.close()
+        raise ResponseTooLarge(f"response exceeded {max_bytes} bytes", response=response)
+    response._content = content
+    response._content_consumed = True
 
 
 def normalize_candidate_domain(value: str) -> str | None:
@@ -283,6 +309,8 @@ def _send_pinned(
     connect_ip: str,
     timeout: int,
     headers: dict[str, str],
+    *,
+    max_bytes: int,
 ) -> requests.Response:
     parsed = urlsplit(url)
     hostname = parsed.hostname or ""
@@ -298,15 +326,19 @@ def _send_pinned(
     try:
         response = adapter.send(
             prepared,
-            stream=False,
+            stream=True,
             timeout=timeout,
             verify=settings["verify"],
             cert=settings["cert"],
             proxies=settings["proxies"],
         )
-        # Materialize the body before closing the short-lived connection pool.
-        _ = response.content
         extract_cookies_to_jar(session.cookies, prepared, response.raw)
+        if response.status_code in _REDIRECT_STATUSES:
+            response.close()
+            response._content = b""
+            response._content_consumed = True
+        else:
+            _materialize_bounded(response, max_bytes)
         return response
     finally:
         adapter.close()
@@ -319,6 +351,7 @@ def safe_get(
     headers: dict | None = None,
     *,
     max_redirects: int = 5,
+    max_bytes: int = DEFAULT_MAX_RESPONSE_BYTES,
     resolver: Resolver = socket.getaddrinfo,
 ) -> requests.Response:
     """GET untrusted public-web content without re-resolving an approved target.
@@ -330,6 +363,8 @@ def safe_get(
     validation and the actual connection.
     """
 
+    if max_bytes <= 0:
+        raise ValueError("max_bytes must be positive")
     merged = dict(HEADERS)
     if headers:
         merged.update(headers)
@@ -342,7 +377,7 @@ def safe_get(
         last_error: requests.RequestException | None = None
         for address in addresses:
             try:
-                response = _send_pinned(session, current, address, timeout, merged)
+                response = _send_pinned(session, current, address, timeout, merged, max_bytes=max_bytes)
                 break
             except requests.RequestException as exc:
                 last_error = exc

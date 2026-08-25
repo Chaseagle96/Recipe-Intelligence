@@ -41,23 +41,33 @@ on:
       - 'verticals/slow_cooker/data/benchmarks/**'
 
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: read
 
-# Production runs share one repository-state mutation domain with Air Fryer,
-# Source Expansion, and Source Catalog Sync. At most one production mutation runs
-# at a time; newer queued work may coalesce an older pending run. Pull-request
-# validation stays isolated per workflow/ref and does not block production.
+# Slow Cooker mutations are independent from Air Fryer and source-discovery state.
+# Pull-request validation remains isolated per ref and is never granted write access.
 concurrency:
-  group: ${{ github.event_name == 'pull_request' && format('{0}-{1}', github.workflow, github.ref) || 'recipe-intelligence-production-state' }}
+  group: ${{ github.event_name == 'pull_request' && format('{0}-{1}', github.workflow, github.ref) || 'recipe-intelligence-slow-cooker-state' }}
   cancel-in-progress: false
 
 jobs:
-  refresh:
+  validate:
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
     uses: ./.github/workflows/_vertical-refresh.yml
     with:
       vertical: slow-cooker
-      mode: ${{ github.event_name == 'pull_request' && 'smoke' || github.event_name == 'workflow_dispatch' && inputs.mode || github.event.schedule == '7 9 * * *' && 'daily' || github.event.schedule == '37 9 * * 0' && 'deep' || 'hourly' }}
-      production: ${{ github.event_name != 'pull_request' }}
-    secrets: inherit
+      mode: smoke
+      production: false
+
+  refresh:
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/_vertical-refresh.yml
+    with:
+      vertical: slow-cooker
+      mode: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || github.event.schedule == '7 9 * * *' && 'daily' || github.event.schedule == '37 9 * * 0' && 'deep' || 'hourly' }}
+      production: true

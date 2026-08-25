@@ -1,6 +1,7 @@
 name: Recipe Intelligence Authority Self-Heal
 
 on:
+  # zizmor: ignore[dangerous-triggers] workflow_run is gated to successful same-repository main pushes below.
   workflow_run:
     workflows:
       - Recipe Intelligence Authority Invalidation
@@ -24,13 +25,17 @@ jobs:
     if: >-
       github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event != 'pull_request' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout current production state
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: main
 
       - name: Restore any non-authoritative vertical
@@ -47,8 +52,8 @@ jobs:
               --workflow "$workflow" \
               --branch main \
               --limit 20 \
-              --json status \
-              --jq 'any(.[]; .status == "queued" or .status == "in_progress" or .status == "waiting" or .status == "pending")'
+              --json event,status \
+              --jq 'any(.[]; .event != "pull_request" and (.status == "queued" or .status == "in_progress" or .status == "waiting" or .status == "pending"))'
           }
 
           dispatch_if_stale() {

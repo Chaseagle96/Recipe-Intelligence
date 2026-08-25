@@ -18,9 +18,11 @@ def _frame(rows) -> pd.DataFrame:
     for column in frame.columns:
         if frame[column].map(lambda value: isinstance(value, (dict, list, tuple, set))).any():
             frame[column] = frame[column].map(
-                lambda value: json.dumps(value, sort_keys=True, default=str)
-                if isinstance(value, (dict, list, tuple, set))
-                else value
+                lambda value: (
+                    json.dumps(value, sort_keys=True, default=str)
+                    if isinstance(value, (dict, list, tuple, set))
+                    else value
+                )
             )
     return frame
 
@@ -80,14 +82,22 @@ def write_duckdb_cache(
         backtest = backtest or {}
         _replace_table(connection, "historical_backtest_windows", backtest.get("windows", []))
         _replace_table(connection, "hyperparameter_evaluation", backtest.get("configurations", []))
-        _replace_table(connection, "historical_backtest_summary", {key: value for key, value in backtest.items() if key not in {"windows", "configurations"}})
+        _replace_table(
+            connection,
+            "historical_backtest_summary",
+            {key: value for key, value in backtest.items() if key not in {"windows", "configurations"}},
+        )
         _replace_table(connection, "evidence_calibration", list((evidence_calibration or {}).values()))
         _replace_table(connection, "evidence_label_results", evidence_label_results or [])
         _replace_table(connection, "publication_quality_gate", quality_gate or {})
         _replace_table(connection, "storage_health", storage_health or {})
         _replace_table(connection, "data_contracts", (contracts or {}).get("contracts", []))
-        connection.execute("CREATE OR REPLACE VIEW top50 AS SELECT * FROM current_rankings WHERE rank <= 50 ORDER BY rank")
-        connection.execute("CREATE OR REPLACE VIEW top10 AS SELECT * FROM current_rankings WHERE rank <= 10 ORDER BY rank")
+        connection.execute(
+            "CREATE OR REPLACE VIEW top50 AS SELECT * FROM current_rankings WHERE rank <= 50 ORDER BY rank"
+        )
+        connection.execute(
+            "CREATE OR REPLACE VIEW top10 AS SELECT * FROM current_rankings WHERE rank <= 10 ORDER BY rank"
+        )
         connection.execute("CHECKPOINT")
     finally:
         connection.close()

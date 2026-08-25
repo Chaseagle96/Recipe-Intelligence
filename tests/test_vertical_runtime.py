@@ -68,18 +68,18 @@ def test_runtime_namespaces_slow_cooker_outputs(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setenv("RECIPE_INTELLIGENCE_VERTICAL_SLUG", "slow_cooker")
     assert vertical_name() == "Slow Cooker"
     assert vertical_slug() == "slow_cooker"
-    assert vertical_output_path("output/air_fryer_analytics.duckdb", "air_fryer_analytics.duckdb", "analytics.duckdb") == Path(
-        "output/slow_cooker_analytics.duckdb"
-    )
+    assert vertical_output_path(
+        "output/air_fryer_analytics.duckdb", "air_fryer_analytics.duckdb", "analytics.duckdb"
+    ) == Path("output/slow_cooker_analytics.duckdb")
 
 
 def test_air_fryer_output_path_is_backward_compatible(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("RECIPE_INTELLIGENCE_VERTICAL", raising=False)
     monkeypatch.delenv("RECIPE_INTELLIGENCE_VERTICAL_SLUG", raising=False)
     assert vertical_name() == "Air Fryer"
-    assert vertical_output_path("output/air_fryer_analytics.duckdb", "air_fryer_analytics.duckdb", "analytics.duckdb") == Path(
-        "output/air_fryer_analytics.duckdb"
-    )
+    assert vertical_output_path(
+        "output/air_fryer_analytics.duckdb", "air_fryer_analytics.duckdb", "analytics.duckdb"
+    ) == Path("output/air_fryer_analytics.duckdb")
 
 
 def test_dashboard_identity_follows_vertical_environment(monkeypatch: pytest.MonkeyPatch) -> None:
