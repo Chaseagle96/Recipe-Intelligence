@@ -63,3 +63,12 @@ sources:
   - domain: thebigmansworld.com
     discovery_urls:
       - https://thebigmansworld.com/category/air-fryer-recipes/
+  - domain: recipeteacher.com
+    discovery_urls:
+      - https://recipeteacher.com/category/air-fryer-recipes/
+  - domain: pipingpotcurry.com
+    discovery_urls:
+      - https://pipingpotcurry.com/category/recipes/air-fryer-recipes/
+  - domain: thecountrycook.net
+    discovery_urls:
+      - https://www.thecountrycook.net/category/air-fryer/
