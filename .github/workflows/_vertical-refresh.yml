@@ -223,12 +223,14 @@ jobs:
       - name: Commit refreshed state, evidence, reports, and dashboard
         if: inputs.production && steps.authority.outputs.publishable == 'true'
         env:
+          GH_TOKEN: ${{ github.token }}
           VERTICAL_ROOT: ${{ steps.vertical.outputs.root }}
           VERTICAL: ${{ inputs.vertical }}
           MODE: ${{ inputs.mode }}
         shell: bash
         run: |
           root="$VERTICAL_ROOT"
+          gh auth setup-git
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add "$root/data" "$root/docs"

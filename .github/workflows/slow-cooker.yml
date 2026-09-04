@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/slow-cooker.yml'
       - '.github/workflows/_vertical-refresh.yml'
+      - '.github/workflows/_vertical-validate.yml'
       - 'src/**'
       - 'tests/**'
       - 'config/verticals/slow_cooker/**'
@@ -31,6 +32,7 @@ on:
     paths:
       - '.github/workflows/slow-cooker.yml'
       - '.github/workflows/_vertical-refresh.yml'
+      - '.github/workflows/_vertical-validate.yml'
       - 'src/**'
       - 'tests/**'
       - 'config/verticals/slow_cooker/**'
@@ -54,11 +56,9 @@ jobs:
     if: github.event_name == 'pull_request'
     permissions:
       contents: read
-    uses: ./.github/workflows/_vertical-refresh.yml
+    uses: ./.github/workflows/_vertical-validate.yml
     with:
       vertical: slow-cooker
-      mode: smoke
-      production: false
 
   refresh:
     if: github.event_name != 'pull_request'

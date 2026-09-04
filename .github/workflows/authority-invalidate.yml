@@ -93,6 +93,7 @@ jobs:
 
       - name: Commit authority invalidation when needed
         env:
+          GH_TOKEN: ${{ github.token }}
           SUMMARY: ${{ matrix.summary }}
           AUTHORITY: ${{ matrix.authority }}
           PUBLIC_AUTHORITY: ${{ matrix.public_authority }}
@@ -100,6 +101,7 @@ jobs:
           DASHBOARD: ${{ matrix.dashboard }}
         shell: bash
         run: |
+          gh auth setup-git
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           for file in "$SUMMARY" "$AUTHORITY" "$MANIFEST" "$PUBLIC_AUTHORITY" "$DASHBOARD"; do

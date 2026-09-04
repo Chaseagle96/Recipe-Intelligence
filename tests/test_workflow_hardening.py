@@ -43,7 +43,7 @@ def _step(payload: dict[str, Any], job: str, name: str) -> dict[str, Any]:
 
 def test_all_workflows_parse_and_external_actions_use_reviewed_shas() -> None:
     paths = sorted(WORKFLOW_ROOT.glob("*.yml"))
-    assert len(paths) == 13
+    assert len(paths) == 14
 
     for path in paths:
         payload = _load(path)
@@ -68,7 +68,7 @@ def test_vertical_pull_requests_are_read_only_and_secret_free() -> None:
         payload = _load(WORKFLOW_ROOT / filename)
         assert payload["permissions"] == {"contents": "read"}
         assert payload["jobs"]["validate"]["permissions"] == {"contents": "read"}
-        assert payload["jobs"]["validate"]["with"]["production"] == "false"
+        assert payload["jobs"]["validate"]["uses"] == "./.github/workflows/_vertical-validate.yml"
         assert payload["jobs"]["refresh"]["permissions"] == {
             "contents": "write",
             "pages": "write",
@@ -77,6 +77,39 @@ def test_vertical_pull_requests_are_read_only_and_secret_free() -> None:
         assert payload["jobs"]["refresh"]["with"]["production"] == "true"
         assert "secrets" not in payload["jobs"]["validate"]
         assert "secrets" not in payload["jobs"]["refresh"]
+
+
+def test_reusable_workflows_never_escalate_caller_permissions() -> None:
+    levels = {"none": 0, "read": 1, "write": 2}
+
+    def check(workflow: dict[str, Any], granted: dict[str, str]) -> None:
+        for job in workflow["jobs"].values():
+            requested = job.get("permissions", workflow.get("permissions", granted))
+            for scope, level in requested.items():
+                assert levels[level] <= levels[granted.get(scope, "none")], (scope, requested, granted)
+            reference = job.get("uses", "")
+            if reference.startswith("./"):
+                check(_load(REPO_ROOT / reference), requested)
+
+    for path in WORKFLOW_ROOT.glob("*.yml"):
+        workflow = _load(path)
+        for job in workflow["jobs"].values():
+            reference = job.get("uses", "")
+            if reference.startswith("./"):
+                check(_load(REPO_ROOT / reference), job.get("permissions", workflow.get("permissions", {})))
+
+
+def test_every_git_publisher_has_step_scoped_authentication() -> None:
+    for path in WORKFLOW_ROOT.glob("*.yml"):
+        workflow = _load(path)
+        for job in workflow["jobs"].values():
+            for step in job.get("steps", []):
+                script = step.get("run", "")
+                if "git push " not in script:
+                    continue
+                assert job.get("permissions", workflow.get("permissions", {})).get("contents") == "write", path
+                assert step.get("env", {}).get("GH_TOKEN") == "${{ github.token }}", path
+                assert script.index("gh auth setup-git") < script.index("git push "), path
 
 
 def test_source_workflow_permissions_and_secret_scope_are_split() -> None:

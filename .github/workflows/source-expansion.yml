@@ -213,9 +213,11 @@ jobs:
 
       - name: Commit source registries and audit evidence
         env:
+          GH_TOKEN: ${{ github.token }}
           MODE: ${{ needs.validate.outputs.mode }}
         shell: bash
         run: |
+          gh auth setup-git
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/source_registry.json verticals/slow_cooker/data/source_registry.json

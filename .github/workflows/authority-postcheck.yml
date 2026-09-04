@@ -130,9 +130,11 @@ jobs:
         if: >-
           github.event_name == 'workflow_dispatch' || steps.freshness.outputs.current == 'true'
         env:
+          GH_TOKEN: ${{ github.token }}
           VERTICAL: ${{ steps.vertical.outputs.vertical }}
         shell: bash
         run: |
+          gh auth setup-git
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           if [ "$VERTICAL" = "air_fryer" ]; then

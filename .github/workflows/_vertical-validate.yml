@@ -1,0 +1,58 @@
+name: Reusable vertical validation
+
+on:
+  workflow_call:
+    inputs:
+      vertical:
+        description: Canonical vertical identifier
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  RECIPE_INTELLIGENCE_VERTICAL: ${{ inputs.vertical == 'slow-cooker' && 'Slow Cooker' || 'Air Fryer' }}
+  RECIPE_INTELLIGENCE_VERTICAL_SLUG: ${{ inputs.vertical == 'slow-cooker' && 'slow_cooker' || 'air_fryer' }}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies and quality tooling
+        run: pip install -r requirements-dev.txt
+
+      - name: Audit dependencies
+        if: inputs.vertical == 'air-fryer'
+        run: pip-audit -r requirements.txt
+
+      - name: Lint source and tests
+        run: |
+          ruff check src tests
+          ruff format --check src tests scripts
+
+      - name: Static type analysis
+        run: mypy src/airfryer_rankings
+
+      - name: Test with branch coverage
+        run: PYTHONPATH=src pytest --cov=airfryer_rankings --cov-report=term-missing --cov-report=xml
+
+      - name: Smoke test vertical and mobile corpus
+        env:
+          VERTICAL: ${{ inputs.vertical }}
+        run: |
+          PYTHONPATH=src python -m airfryer_rankings.ops run-vertical --vertical "$VERTICAL" --mode smoke
+          PYTHONPATH=src python -m airfryer_rankings.ops rebuild-mobile-corpus --vertical "$VERTICAL"
+          PYTHONPATH=src python -m airfryer_rankings.ops validate-mobile-manifest --vertical "$VERTICAL"
