@@ -26,6 +26,7 @@ jobs:
     concurrency:
       group: recipe-intelligence-${{ matrix.vertical }}-state
       cancel-in-progress: false
+      queue: max
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:

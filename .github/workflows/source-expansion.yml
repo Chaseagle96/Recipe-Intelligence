@@ -49,6 +49,7 @@ permissions:
 concurrency:
   group: ${{ github.event_name == 'pull_request' && format('{0}-{1}', github.workflow, github.ref) || 'recipe-intelligence-source-network-state' }}
   cancel-in-progress: false
+  queue: max
 
 env:
   RECIPE_INTELLIGENCE_BASE_SOURCES_ONLY: '1'

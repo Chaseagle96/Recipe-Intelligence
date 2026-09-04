@@ -34,6 +34,7 @@ permissions:
 concurrency:
   group: ${{ github.event_name == 'pull_request' && format('{0}-{1}', github.workflow, github.ref) || 'recipe-intelligence-source-network-state' }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
   validate:
@@ -102,6 +103,7 @@ jobs:
     concurrency:
       group: recipe-intelligence-${{ matrix.vertical }}-state
       cancel-in-progress: false
+      queue: max
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:

@@ -16,7 +16,7 @@ on:
       - 'pyproject.toml'
       - 'verticals/slow_cooker/data/benchmarks/**'
   schedule:
-    - cron: '31 * * * *'
+    - cron: '31 */6 * * *'
     - cron: '7 9 * * *'
     - cron: '37 9 * * 0'
   workflow_dispatch:
@@ -50,6 +50,7 @@ permissions:
 concurrency:
   group: ${{ github.event_name == 'pull_request' && format('{0}-{1}', github.workflow, github.ref) || 'recipe-intelligence-slow-cooker-state' }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
   validate:

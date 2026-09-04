@@ -36,6 +36,7 @@ jobs:
     concurrency:
       group: recipe-intelligence-${{ github.event_name == 'workflow_dispatch' && inputs.vertical == 'slow_cooker' && 'slow-cooker' || github.event_name == 'workflow_run' && github.event.workflow_run.name == 'Recipe Intelligence — Slow Cooker' && 'slow-cooker' || 'air-fryer' }}-state
       cancel-in-progress: false
+      queue: max
     steps:
       - name: Checkout current production state
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
