@@ -9,12 +9,12 @@
   "candidate_domains_quarantined": 4,
   "candidate_domains_rejected": 0,
   "candidate_domains_suspended": 0,
-  "catalog_net_change": 3,
+  "catalog_net_change": 0,
   "catalog_sync": [
     {
       "discovered_urls": 3603,
       "discovery_errors": [],
-      "elapsed_seconds": 52.34,
+      "elapsed_seconds": 58.63,
       "new_urls": 0,
       "robots_status": "ok",
       "sitemap_docs": 13,
@@ -24,8 +24,8 @@
     {
       "discovered_urls": 332,
       "discovery_errors": [],
-      "elapsed_seconds": 8.46,
-      "new_urls": 2,
+      "elapsed_seconds": 5.31,
+      "new_urls": 0,
       "robots_status": "ok",
       "sitemap_docs": 7,
       "source": "kelvinskitchen.com",
@@ -34,7 +34,7 @@
     {
       "discovered_urls": 473,
       "discovery_errors": [],
-      "elapsed_seconds": 7.12,
+      "elapsed_seconds": 5.57,
       "new_urls": 0,
       "robots_status": "ok",
       "sitemap_docs": 7,
@@ -44,7 +44,7 @@
     {
       "discovered_urls": 227,
       "discovery_errors": [],
-      "elapsed_seconds": 9.91,
+      "elapsed_seconds": 6.97,
       "new_urls": 0,
       "robots_status": "ok",
       "sitemap_docs": 6,
@@ -54,17 +54,17 @@
     {
       "discovered_urls": 320,
       "discovery_errors": [],
-      "elapsed_seconds": 11.6,
-      "new_urls": 1,
+      "elapsed_seconds": 8.47,
+      "new_urls": 0,
       "robots_status": "ok",
       "sitemap_docs": 8,
       "source": "theyummybowl.com",
       "status": "ok"
     }
   ],
-  "catalog_sync_generated_at": "2026-09-05T05:10:11.787495+00:00",
+  "catalog_sync_generated_at": "2026-09-05T05:14:52.726990+00:00",
   "catalog_url_count": 7752,
-  "catalog_urls_added_after_promotion": 3,
+  "catalog_urls_added_after_promotion": 0,
   "catalog_urls_coalesced": 0,
   "catalog_urls_rewritten": 0,
   "effective_source_count": 52,
