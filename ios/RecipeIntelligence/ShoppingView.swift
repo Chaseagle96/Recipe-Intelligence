@@ -25,6 +25,7 @@ struct ShoppingView: View {
                     Button("Build from This Week", systemImage: "wand.and.stars") { appModel.generateShoppingList() }
                         .recipeGlassButton(prominent: true)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 4)
 
                 HStack {
@@ -38,27 +39,40 @@ struct ShoppingView: View {
                 }
             }
 
-            ForEach(categories, id: \.self) { category in
-                Section(category) {
-                    ForEach(items.filter { $0.category == category }) { item in
-                        Toggle(isOn: Binding(
-                            get: { item.isChecked },
-                            set: {
-                                item.isChecked = $0
-                                try? modelContext.save()
-                            }
-                        )) {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(displayText(item))
-                                if item.sourceRecipeIDs.count > 1 {
-                                    Text("Used by \(item.sourceRecipeIDs.count) planned recipes")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+            if items.isEmpty {
+                Section {
+                    ContentUnavailableView(
+                        "Your list is empty",
+                        systemImage: "cart",
+                        description: Text("Plan recipes, then build one combined ingredient list.")
+                    )
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 28)
+                }
+            } else {
+                ForEach(categories, id: \.self) { category in
+                    Section(category) {
+                        ForEach(items.filter { $0.category == category }) { item in
+                            Toggle(isOn: Binding(
+                                get: { item.isChecked },
+                                set: {
+                                    item.isChecked = $0
+                                    try? modelContext.save()
+                                }
+                            )) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(displayText(item))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    if item.sourceRecipeIDs.count > 1 {
+                                        Text("Used by \(item.sourceRecipeIDs.count) planned recipes")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
                             }
-                        }
-                        .swipeActions {
-                            Button("Delete", role: .destructive) { appModel.deleteShoppingItem(item) }
+                            .swipeActions {
+                                Button("Delete", role: .destructive) { appModel.deleteShoppingItem(item) }
+                            }
                         }
                     }
                 }
@@ -68,12 +82,6 @@ struct ShoppingView: View {
         .scrollContentBackground(.hidden)
         .recipeScreenBackground()
         .navigationTitle("Shopping")
-        .overlay {
-            if items.isEmpty {
-                ContentUnavailableView("Your list is empty", systemImage: "cart", description: Text("Plan recipes, then build one combined ingredient list."))
-                    .allowsHitTesting(false)
-            }
-        }
         .recipeToolbarBehavior()
     }
 

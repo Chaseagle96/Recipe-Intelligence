@@ -86,6 +86,22 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             test
 
+  package-unsigned-ipa:
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Verify Xcode 27
+        run: |
+          XCODE_VERSION="$(xcodebuild -version | head -n 1)"
+          echo "$XCODE_VERSION"
+          case "$XCODE_VERSION" in
+            "Xcode 27"*) ;;
+            *) echo "Expected Xcode 27 runner, got: $XCODE_VERSION" >&2; exit 1 ;;
+          esac
+
       - name: Build unsigned iPhone app
         run: |
           set -o pipefail
