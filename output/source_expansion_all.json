@@ -1,5 +1,5 @@
 {
-  "catalog_sync_generated_at": "2026-09-07T05:37:48.122664+00:00",
+  "catalog_sync_generated_at": "2026-09-07T06:15:21.184161+00:00",
   "generated_at": "2026-09-07T00:07:08.294108+00:00",
   "mode": "deep",
   "source_gate_version": 2,
@@ -161,7 +161,54 @@
       "candidate_domains_quarantined": 4,
       "candidate_domains_rejected": 0,
       "candidate_domains_suspended": 0,
+      "catalog_net_change": 0,
+      "catalog_sync": [
+        {
+          "discovered_urls": 182,
+          "discovery_errors": [],
+          "elapsed_seconds": 54.96,
+          "new_urls": 0,
+          "robots_status": "ok",
+          "sitemap_docs": 13,
+          "source": "forktospoon.com",
+          "status": "ok"
+        },
+        {
+          "discovered_urls": 181,
+          "discovery_errors": [],
+          "elapsed_seconds": 5.3,
+          "new_urls": 0,
+          "robots_status": "ok",
+          "sitemap_docs": 7,
+          "source": "kelvinskitchen.com",
+          "status": "ok"
+        },
+        {
+          "discovered_urls": 368,
+          "discovery_errors": [],
+          "elapsed_seconds": 5.61,
+          "new_urls": 0,
+          "robots_status": "ok",
+          "sitemap_docs": 7,
+          "source": "temeculablogs.com",
+          "status": "ok"
+        },
+        {
+          "discovered_urls": 174,
+          "discovery_errors": [],
+          "elapsed_seconds": 7.21,
+          "new_urls": 0,
+          "robots_status": "ok",
+          "sitemap_docs": 6,
+          "source": "thestayathomechef.com",
+          "status": "ok"
+        }
+      ],
+      "catalog_sync_generated_at": "2026-09-07T06:15:21.184161+00:00",
       "catalog_url_count": 4070,
+      "catalog_urls_added_after_promotion": 0,
+      "catalog_urls_coalesced": 0,
+      "catalog_urls_rewritten": 0,
       "effective_source_count": 42,
       "evaluations": [
         {
