@@ -2,72 +2,15 @@
   "auto_source_count": 5,
   "candidate_domains_active": 5,
   "candidate_domains_degraded": 0,
-  "candidate_domains_discovered": 332,
+  "candidate_domains_discovered": 345,
   "candidate_domains_evaluated": 4,
   "candidate_domains_new": 0,
   "candidate_domains_promoted": 0,
   "candidate_domains_quarantined": 4,
   "candidate_domains_rejected": 0,
   "candidate_domains_suspended": 0,
-  "catalog_net_change": 0,
-  "catalog_sync": [
-    {
-      "discovered_urls": 3603,
-      "discovery_errors": [],
-      "elapsed_seconds": 57.26,
-      "new_urls": 0,
-      "robots_status": "ok",
-      "sitemap_docs": 13,
-      "source": "forktospoon.com",
-      "status": "ok"
-    },
-    {
-      "discovered_urls": 341,
-      "discovery_errors": [],
-      "elapsed_seconds": 8.87,
-      "new_urls": 0,
-      "robots_status": "ok",
-      "sitemap_docs": 7,
-      "source": "kelvinskitchen.com",
-      "status": "ok"
-    },
-    {
-      "discovered_urls": 473,
-      "discovery_errors": [],
-      "elapsed_seconds": 7.27,
-      "new_urls": 0,
-      "robots_status": "ok",
-      "sitemap_docs": 7,
-      "source": "temeculablogs.com",
-      "status": "ok"
-    },
-    {
-      "discovered_urls": 227,
-      "discovery_errors": [],
-      "elapsed_seconds": 7.65,
-      "new_urls": 0,
-      "robots_status": "ok",
-      "sitemap_docs": 6,
-      "source": "thestayathomechef.com",
-      "status": "ok"
-    },
-    {
-      "discovered_urls": 315,
-      "discovery_errors": [],
-      "elapsed_seconds": 11.96,
-      "new_urls": 0,
-      "robots_status": "ok",
-      "sitemap_docs": 8,
-      "source": "theyummybowl.com",
-      "status": "ok"
-    }
-  ],
-  "catalog_sync_generated_at": "2026-09-07T05:37:48.122664+00:00",
   "catalog_url_count": 7752,
-  "catalog_urls_added_after_promotion": 0,
-  "catalog_urls_coalesced": 0,
-  "catalog_urls_rewritten": 0,
-  "effective_source_count": 52,
+  "effective_source_count": 56,
   "evaluations": [
     {
       "domain": "eatwell101.com",
@@ -118,8 +61,8 @@
       ]
     }
   ],
-  "generated_at": "2026-09-07T00:07:08.294108+00:00",
-  "manual_source_count": 47,
+  "generated_at": "2026-09-07T15:55:40.657652+00:00",
+  "manual_source_count": 51,
   "median_source_quality_score": 0.0,
   "pinned_source_warnings": 0,
   "promotion_rate": 0.0,
@@ -134,7 +77,7 @@
     },
     {
       "hits": 0,
-      "pages_fetched": 5,
+      "pages_fetched": 2,
       "provider": "trusted_outbound_link",
       "status": "ok"
     }
