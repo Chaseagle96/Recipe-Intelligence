@@ -72,3 +72,15 @@ sources:
   - domain: thecountrycook.net
     discovery_urls:
       - https://www.thecountrycook.net/category/air-fryer/
+  - domain: masonfit.com
+    discovery_urls:
+      - https://masonfit.com/category/recipes/air-fryer-recipes/
+  - domain: jenniferbanz.com
+    discovery_urls:
+      - https://jenniferbanz.com/category/recipes/air-fryer
+  - domain: thefoodiephysician.com
+    discovery_urls:
+      - https://thefoodiephysician.com/category/air-fryer-recipes/
+  - domain: confessionsofafitfoodie.com
+    discovery_urls:
+      - https://confessionsofafitfoodie.com/category/recipes/cooking-method/airfryer/
