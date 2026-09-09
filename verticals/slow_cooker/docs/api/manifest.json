@@ -2,11 +2,11 @@
   "authority": {
     "authoritative": false,
     "authority_contract_version": 2,
-    "catalog_sync_generated_at": "2026-09-08T19:19:48.943742+00:00",
-    "invalidated_at": "2026-09-08T19:22:52.698415+00:00",
+    "catalog_sync_generated_at": null,
+    "invalidated_at": "2026-09-09T18:40:07.871818+00:00",
     "last_ranking_generated_at": "2026-08-19T05:02:49.320697+00:00",
     "reason": "source_or_catalog_generation_advanced",
-    "source_expansion_generated_at": "2026-09-08T14:39:08.335031+00:00",
+    "source_expansion_generated_at": "2026-09-09T14:40:38.567477+00:00",
     "status": "refresh_required",
     "vertical": "slow_cooker"
   },
