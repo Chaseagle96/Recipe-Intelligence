@@ -14,6 +14,10 @@ struct RootView: View {
                 .tabItem { Label("Saved", systemImage: "heart.fill") }
                 .accessibilityIdentifier("tab.saved")
 
+            NavigationStack { CorpusSearchView() }
+                .tabItem { Label("Search", systemImage: "magnifyingglass") }
+                .accessibilityIdentifier("tab.search")
+
             NavigationStack { PlannerView() }
                 .tabItem { Label("Plan", systemImage: "calendar") }
                 .accessibilityIdentifier("tab.plan")
@@ -21,10 +25,6 @@ struct RootView: View {
             NavigationStack { ShoppingView() }
                 .tabItem { Label("Shopping", systemImage: "cart") }
                 .accessibilityIdentifier("tab.shopping")
-
-            NavigationStack { ProfileView() }
-                .tabItem { Label("Taste", systemImage: "person.2") }
-                .accessibilityIdentifier("tab.taste")
         }
         .recipeTabBarBehavior()
         .task { await appModel.bootstrap() }

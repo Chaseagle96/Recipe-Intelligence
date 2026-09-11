@@ -136,13 +136,12 @@ extension View {
         }
     }
 
+    // Keep the navigation bar in its standard safe-area layout. On iOS 27,
+    // navigation-bar minimization can float over the first scroll-content row,
+    // leaving top controls visible to accessibility but not hittable.
     @ViewBuilder
     func recipeToolbarBehavior() -> some View {
-        if #available(iOS 27.0, *) {
-            toolbarMinimizationBehavior(.onScrollDown, for: .navigationBar)
-        } else {
-            self
-        }
+        self
     }
 
     func recipeScreenBackground() -> some View {
