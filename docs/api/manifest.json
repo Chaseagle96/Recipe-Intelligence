@@ -2,11 +2,11 @@
   "authority": {
     "authoritative": false,
     "authority_contract_version": 2,
-    "catalog_sync_generated_at": "2026-09-14T05:54:08.554215+00:00",
-    "invalidated_at": "2026-09-14T06:34:06.680509+00:00",
+    "catalog_sync_generated_at": null,
+    "invalidated_at": "2026-09-14T19:28:02.166885+00:00",
     "last_ranking_generated_at": "2026-08-20T21:42:45.736996+00:00",
     "reason": "source_or_catalog_generation_advanced",
-    "source_expansion_generated_at": "2026-09-14T01:19:47.893978+00:00",
+    "source_expansion_generated_at": "2026-09-14T16:25:04.964309+00:00",
     "status": "refresh_required",
     "vertical": "air_fryer"
   },
