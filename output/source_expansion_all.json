@@ -1,85 +1,20 @@
 {
-  "catalog_sync_generated_at": "2026-09-14T01:16:38.287233+00:00",
-  "generated_at": "2026-09-13T14:28:41.332962+00:00",
-  "mode": "daily",
+  "generated_at": "2026-09-14T01:19:47.893978+00:00",
+  "mode": "deep",
   "source_gate_version": 2,
   "verticals": {
     "air_fryer": {
       "auto_source_count": 5,
       "candidate_domains_active": 5,
       "candidate_domains_degraded": 0,
-      "candidate_domains_discovered": 423,
+      "candidate_domains_discovered": 436,
       "candidate_domains_evaluated": 4,
       "candidate_domains_new": 0,
       "candidate_domains_promoted": 0,
       "candidate_domains_quarantined": 4,
       "candidate_domains_rejected": 0,
       "candidate_domains_suspended": 0,
-      "catalog_net_change": 1,
-      "catalog_sync": [
-        {
-          "discovered_urls": 2159,
-          "discovery_errors": [],
-          "elapsed_seconds": 37.77,
-          "new_urls": 1,
-          "robots_status": "ok",
-          "sitemap_docs": 5,
-          "source": "forktospoon.com",
-          "status": "ok"
-        },
-        {
-          "discovered_urls": 410,
-          "discovery_errors": [],
-          "elapsed_seconds": 8.46,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 7,
-          "source": "kelvinskitchen.com",
-          "status": "ok"
-        },
-        {
-          "discovered_urls": 478,
-          "discovery_errors": [],
-          "elapsed_seconds": 1.97,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 7,
-          "source": "temeculablogs.com",
-          "status": "ok"
-        },
-        {
-          "discovered_urls": 227,
-          "discovery_errors": [],
-          "elapsed_seconds": 1.67,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 6,
-          "source": "thestayathomechef.com",
-          "status": "ok"
-        },
-        {
-          "discovered_urls": 0,
-          "discovery_errors": [
-            "https://theyummybowl.com/sitemap_index.xml:HTTPError",
-            "https://theyummybowl.com/air-fryer-chicken-and-vegetables/:HTTPError",
-            "https://theyummybowl.com/crispy-air-fryer-honey-bbq-chicken-tenders/:HTTPError",
-            "https://theyummybowl.com/2-minute-air-fryer-ahi-tuna-steak/:HTTPError",
-            "https://theyummybowl.com/air-fryer-chicken-wings/:HTTPError",
-            "https://theyummybowl.com/easy-air-fryer-cabbage/:HTTPError"
-          ],
-          "elapsed_seconds": 1.1,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 1,
-          "source": "theyummybowl.com",
-          "status": "degraded"
-        }
-      ],
-      "catalog_sync_generated_at": "2026-09-14T00:28:29.762524+00:00",
       "catalog_url_count": 7760,
-      "catalog_urls_added_after_promotion": 1,
-      "catalog_urls_coalesced": 0,
-      "catalog_urls_rewritten": 0,
       "effective_source_count": 56,
       "evaluations": [
         {
@@ -131,7 +66,7 @@
           ]
         }
       ],
-      "generated_at": "2026-09-13T14:28:41.332962+00:00",
+      "generated_at": "2026-09-14T01:19:47.893978+00:00",
       "manual_source_count": 51,
       "median_source_quality_score": 0.0,
       "pinned_source_warnings": 0,
@@ -147,7 +82,7 @@
         },
         {
           "hits": 0,
-          "pages_fetched": 2,
+          "pages_fetched": 5,
           "provider": "trusted_outbound_link",
           "status": "ok"
         }
@@ -161,61 +96,14 @@
       "auto_source_count": 4,
       "candidate_domains_active": 0,
       "candidate_domains_degraded": 0,
-      "candidate_domains_discovered": 438,
+      "candidate_domains_discovered": 453,
       "candidate_domains_evaluated": 4,
       "candidate_domains_new": 0,
       "candidate_domains_promoted": 0,
       "candidate_domains_quarantined": 4,
       "candidate_domains_rejected": 0,
       "candidate_domains_suspended": 0,
-      "catalog_net_change": 1,
-      "catalog_sync": [
-        {
-          "discovered_urls": 183,
-          "discovery_errors": [],
-          "elapsed_seconds": 51.43,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 13,
-          "source": "forktospoon.com",
-          "status": "ok"
-        },
-        {
-          "discovered_urls": 176,
-          "discovery_errors": [],
-          "elapsed_seconds": 9.88,
-          "new_urls": 1,
-          "robots_status": "ok",
-          "sitemap_docs": 7,
-          "source": "kelvinskitchen.com",
-          "status": "ok"
-        },
-        {
-          "discovered_urls": 375,
-          "discovery_errors": [],
-          "elapsed_seconds": 6.67,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 7,
-          "source": "temeculablogs.com",
-          "status": "ok"
-        },
-        {
-          "discovered_urls": 176,
-          "discovery_errors": [],
-          "elapsed_seconds": 6.4,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 6,
-          "source": "thestayathomechef.com",
-          "status": "ok"
-        }
-      ],
-      "catalog_sync_generated_at": "2026-09-14T01:16:38.287233+00:00",
       "catalog_url_count": 4072,
-      "catalog_urls_added_after_promotion": 1,
-      "catalog_urls_coalesced": 0,
-      "catalog_urls_rewritten": 0,
       "effective_source_count": 42,
       "evaluations": [
         {
@@ -267,7 +155,7 @@
           ]
         }
       ],
-      "generated_at": "2026-09-13T14:28:41.332962+00:00",
+      "generated_at": "2026-09-14T01:19:47.893978+00:00",
       "manual_source_count": 38,
       "median_source_quality_score": 0.0,
       "pinned_source_warnings": 0,
@@ -282,8 +170,8 @@
           "status": "unavailable_missing_configuration"
         },
         {
-          "hits": 0,
-          "pages_fetched": 2,
+          "hits": 2,
+          "pages_fetched": 5,
           "provider": "trusted_outbound_link",
           "status": "ok"
         }
