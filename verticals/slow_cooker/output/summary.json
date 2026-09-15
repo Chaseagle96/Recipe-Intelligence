@@ -88,11 +88,11 @@
   "authority": {
     "authoritative": false,
     "authority_contract_version": 2,
-    "catalog_sync_generated_at": "2026-09-14T20:14:57.623667+00:00",
-    "invalidated_at": "2026-09-15T01:01:02.276084+00:00",
+    "catalog_sync_generated_at": null,
+    "invalidated_at": "2026-09-15T17:17:56.294185+00:00",
     "last_ranking_generated_at": "2026-08-19T05:02:49.320697+00:00",
     "reason": "source_or_catalog_generation_advanced",
-    "source_expansion_generated_at": "2026-09-14T16:25:04.964309+00:00",
+    "source_expansion_generated_at": "2026-09-15T15:05:42.179611+00:00",
     "status": "refresh_required",
     "vertical": "slow_cooker"
   },
