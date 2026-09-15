@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RemoteRecipeDetailView: View {
     @EnvironmentObject private var appModel: AppModel
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     let recipe: RemoteRecipe
 
@@ -9,7 +10,8 @@ struct RemoteRecipeDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 RemoteRecipeImage(url: recipe.photoURL, title: recipe.title)
-                    .frame(height: 320)
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(1.18, contentMode: .fill)
                     .clipped()
                     .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
                     .overlay(alignment: .bottomLeading) {
@@ -25,24 +27,21 @@ struct RemoteRecipeDetailView: View {
                     Text(recipe.title)
                         .font(.largeTitle.bold())
                         .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                     Text("From \(recipe.source)")
                         .font(.headline)
+                        .fixedSize(horizontal: false, vertical: true)
                     if !recipe.author.isEmpty {
                         Text("By \(recipe.author)")
                             .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    RecipeGlassGroup(spacing: 10) {
-                        HStack(spacing: 10) {
-                            RecipeMetricPill(title: String(format: "%.1f", recipe.rating), systemImage: "star.fill")
-                            RecipeMetricPill(title: "\(recipe.ratingCount.formatted()) ratings", systemImage: "person.2.fill")
-                            RecipeMetricPill(title: recipe.confidenceLabel, systemImage: "checkmark.seal.fill")
-                        }
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
+                    metricCluster
                 }
                 .padding(18)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .recipeGlassSurface(cornerRadius: RecipeDesign.cornerRadius)
 
                 if !recipe.ingredients.isEmpty {
@@ -52,8 +51,10 @@ struct RemoteRecipeDetailView: View {
                             Label(ingredient, systemImage: "circle.fill")
                                 .symbolRenderingMode(.hierarchical)
                                 .font(.body)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -64,6 +65,7 @@ struct RemoteRecipeDetailView: View {
                         Text("Open the original publisher page for the complete cooking method.")
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .foregroundStyle(.secondary)
 
                 if !recipe.rankProvenance.isEmpty {
@@ -72,11 +74,14 @@ struct RemoteRecipeDetailView: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                             .padding(.top, 6)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .recipeGlassSurface(cornerRadius: RecipeDesign.compactCornerRadius)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal)
             .padding(.top, 8)
             .padding(.bottom, 110)
@@ -99,13 +104,60 @@ struct RemoteRecipeDetailView: View {
                         .recipeGlassButton()
                     }
                 }
+                .frame(maxWidth: .infinity)
                 .padding(.horizontal)
                 .padding(.vertical, 8)
             }
         }
         .navigationTitle("Recipe")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Close", systemImage: "xmark") { dismiss() }
+                    .labelStyle(.iconOnly)
+                    .accessibilityIdentifier("detail.close")
+            }
+        }
         .recipeToolbarBehavior()
+    }
+
+    private var metricCluster: some View {
+        RecipeGlassGroup(spacing: 10) {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    ratingPill
+                    ratingCountPill
+                    confidencePill
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 10) {
+                        ratingPill
+                        ratingCountPill
+                    }
+                    confidencePill
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    ratingPill
+                    ratingCountPill
+                    confidencePill
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var ratingPill: some View {
+        RecipeMetricPill(title: String(format: "%.1f", recipe.rating), systemImage: "star.fill")
+    }
+
+    private var ratingCountPill: some View {
+        RecipeMetricPill(title: "\(recipe.ratingCount.formatted()) ratings", systemImage: "person.2.fill")
+    }
+
+    private var confidencePill: some View {
+        RecipeMetricPill(title: recipe.confidenceLabel, systemImage: "checkmark.seal.fill")
     }
 
     private func sectionTitle(_ title: String) -> some View {
