@@ -1,6 +1,5 @@
 {
-  "catalog_sync_generated_at": "2026-09-17T16:21:52.945008+00:00",
-  "generated_at": "2026-09-17T15:05:50.334569+00:00",
+  "generated_at": "2026-09-18T14:34:03.637894+00:00",
   "mode": "daily",
   "source_gate_version": 2,
   "verticals": {
@@ -8,78 +7,14 @@
       "auto_source_count": 5,
       "candidate_domains_active": 5,
       "candidate_domains_degraded": 0,
-      "candidate_domains_discovered": 488,
-      "candidate_domains_evaluated": 4,
+      "candidate_domains_discovered": 501,
+      "candidate_domains_evaluated": 6,
       "candidate_domains_new": 0,
       "candidate_domains_promoted": 0,
       "candidate_domains_quarantined": 4,
-      "candidate_domains_rejected": 0,
+      "candidate_domains_rejected": 2,
       "candidate_domains_suspended": 0,
-      "catalog_net_change": 0,
-      "catalog_sync": [
-        {
-          "discovered_urls": 0,
-          "discovery_errors": [
-            "https://forktospoon.com/sitemap_index.xml:HTTPError",
-            "https://forktospoon.com/method/air-fryer/:HTTPError",
-            "https://forktospoon.com/air-fryer-parmesan-kale-chips/:HTTPError",
-            "https://forktospoon.com/do-air-fryers-use-radiation/:HTTPError",
-            "https://forktospoon.com/air-fryer-cranberry-orange-nut-bread/:HTTPError",
-            "https://forktospoon.com/what-to-put-under-your-air-fryer/:HTTPError"
-          ],
-          "elapsed_seconds": 0.42,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 1,
-          "source": "forktospoon.com",
-          "status": "degraded"
-        },
-        {
-          "discovered_urls": 415,
-          "discovery_errors": [],
-          "elapsed_seconds": 8.77,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 7,
-          "source": "kelvinskitchen.com",
-          "status": "ok"
-        },
-        {
-          "discovered_urls": 473,
-          "discovery_errors": [],
-          "elapsed_seconds": 5.64,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 7,
-          "source": "temeculablogs.com",
-          "status": "ok"
-        },
-        {
-          "discovered_urls": 227,
-          "discovery_errors": [],
-          "elapsed_seconds": 6.08,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 6,
-          "source": "thestayathomechef.com",
-          "status": "ok"
-        },
-        {
-          "discovered_urls": 319,
-          "discovery_errors": [],
-          "elapsed_seconds": 13.44,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 8,
-          "source": "theyummybowl.com",
-          "status": "ok"
-        }
-      ],
-      "catalog_sync_generated_at": "2026-09-17T15:31:32.888031+00:00",
       "catalog_url_count": 7763,
-      "catalog_urls_added_after_promotion": 0,
-      "catalog_urls_coalesced": 0,
-      "catalog_urls_rewritten": 0,
       "effective_source_count": 56,
       "evaluations": [
         {
@@ -129,9 +64,111 @@
           "temporary_failures": [
             "robots_unavailable"
           ]
+        },
+        {
+          "domain": "slowcookergourmet.net",
+          "editorial_provenance_ratio": 0.0,
+          "external_canonical_ratio": 0.0,
+          "extraction_success_rate": null,
+          "fetch_success_rate": 0.0,
+          "field_completeness": 0.0,
+          "freshness_score": 50.0,
+          "hard_failures": [
+            "low_recipe_structure_yield",
+            "low_vertical_relevance",
+            "thin_recipe_content"
+          ],
+          "mean_rating_evidence_confidence": null,
+          "novelty_ratio": 0.0,
+          "pages_fetched": 0,
+          "pages_sampled": 0,
+          "qualifying_vertical_recipe_count": 0,
+          "quality_components": {
+            "crawl_stability": 0.0,
+            "editorial_provenance": 0.0,
+            "extraction_reliability": 0.0,
+            "freshness": 50.0,
+            "general_quality": 70.0,
+            "rating_integrity": 70.0,
+            "unique_contribution": 0.0,
+            "vertical_relevance": 0.0
+          },
+          "quality_score": 13.0,
+          "ranking_evidence_coverage_ratio": 0.0,
+          "ranking_evidence_pages": 0,
+          "ranking_row_yield": 0.0,
+          "rating_conflict_ratio": 0.0,
+          "rating_coverage_ratio": 0.0,
+          "recipe_structure_rate": 0.0,
+          "recipes_extracted": 0,
+          "recipes_recognized": 0,
+          "robots_status": "ok",
+          "sample_recipe_yield": 0.0,
+          "substantive_recipe_ratio": 0.0,
+          "suspicious_uniform_rating_evidence": false,
+          "temporary_failures": [
+            "insufficient_sample",
+            "insufficient_fetches",
+            "insufficient_vertical_recipe_body",
+            "low_fetch_success"
+          ],
+          "trap_url_ratio": 0.0,
+          "vertical_relevance_ratio": 0.0,
+          "within_source_duplicate_ratio": 0.0
+        },
+        {
+          "domain": "thelittlekitchen.net",
+          "editorial_provenance_ratio": 0.0,
+          "external_canonical_ratio": 0.0,
+          "extraction_success_rate": null,
+          "fetch_success_rate": 0.0,
+          "field_completeness": 0.0,
+          "freshness_score": 50.0,
+          "hard_failures": [
+            "low_recipe_structure_yield",
+            "low_vertical_relevance",
+            "thin_recipe_content"
+          ],
+          "mean_rating_evidence_confidence": null,
+          "novelty_ratio": 0.0,
+          "pages_fetched": 0,
+          "pages_sampled": 0,
+          "qualifying_vertical_recipe_count": 0,
+          "quality_components": {
+            "crawl_stability": 0.0,
+            "editorial_provenance": 0.0,
+            "extraction_reliability": 0.0,
+            "freshness": 50.0,
+            "general_quality": 70.0,
+            "rating_integrity": 70.0,
+            "unique_contribution": 0.0,
+            "vertical_relevance": 0.0
+          },
+          "quality_score": 13.0,
+          "ranking_evidence_coverage_ratio": 0.0,
+          "ranking_evidence_pages": 0,
+          "ranking_row_yield": 0.0,
+          "rating_conflict_ratio": 0.0,
+          "rating_coverage_ratio": 0.0,
+          "recipe_structure_rate": 0.0,
+          "recipes_extracted": 0,
+          "recipes_recognized": 0,
+          "robots_status": "ok",
+          "sample_recipe_yield": 0.0,
+          "substantive_recipe_ratio": 0.0,
+          "suspicious_uniform_rating_evidence": false,
+          "temporary_failures": [
+            "insufficient_sample",
+            "insufficient_fetches",
+            "insufficient_vertical_recipe_body",
+            "low_fetch_success"
+          ],
+          "trap_url_ratio": 0.0,
+          "vertical_relevance_ratio": 0.0,
+          "within_source_duplicate_ratio": 0.0
         }
       ],
-      "generated_at": "2026-09-17T15:05:50.334569+00:00",
+      "generated_at": "2026-09-18T14:34:03.637894+00:00",
       "manual_source_count": 51,
       "median_source_quality_score": 0.0,
       "pinned_source_warnings": 0,
@@ -161,68 +198,14 @@
       "auto_source_count": 4,
       "candidate_domains_active": 0,
       "candidate_domains_degraded": 0,
-      "candidate_domains_discovered": 505,
-      "candidate_domains_evaluated": 4,
+      "candidate_domains_discovered": 518,
+      "candidate_domains_evaluated": 6,
       "candidate_domains_new": 0,
       "candidate_domains_promoted": 0,
       "candidate_domains_quarantined": 4,
-      "candidate_domains_rejected": 0,
+      "candidate_domains_rejected": 2,
       "candidate_domains_suspended": 0,
-      "catalog_net_change": 0,
-      "catalog_sync": [
-        {
-          "discovered_urls": 0,
-          "discovery_errors": [
-            "https://forktospoon.com/sitemap_index.xml:HTTPError",
-            "https://forktospoon.com/slow-cooker-meatball-sliders/:HTTPError",
-            "https://forktospoon.com/slow-cooker-flank-steak/:HTTPError",
-            "https://forktospoon.com/easy-crock-pot-frozen-meatballs/:HTTPError",
-            "https://forktospoon.com/slow-cooker-cajun-jambalaya-recipe/:HTTPError",
-            "https://forktospoon.com/25-family-friendly-crockpot-dinners-your-kids-will-devour/:HTTPError"
-          ],
-          "elapsed_seconds": 0.37,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 1,
-          "source": "forktospoon.com",
-          "status": "degraded"
-        },
-        {
-          "discovered_urls": 172,
-          "discovery_errors": [],
-          "elapsed_seconds": 11.05,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 7,
-          "source": "kelvinskitchen.com",
-          "status": "ok"
-        },
-        {
-          "discovered_urls": 366,
-          "discovery_errors": [],
-          "elapsed_seconds": 6.07,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 7,
-          "source": "temeculablogs.com",
-          "status": "ok"
-        },
-        {
-          "discovered_urls": 179,
-          "discovery_errors": [],
-          "elapsed_seconds": 5.05,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 6,
-          "source": "thestayathomechef.com",
-          "status": "ok"
-        }
-      ],
-      "catalog_sync_generated_at": "2026-09-17T16:21:52.945008+00:00",
       "catalog_url_count": 4073,
-      "catalog_urls_added_after_promotion": 0,
-      "catalog_urls_coalesced": 0,
-      "catalog_urls_rewritten": 0,
       "effective_source_count": 42,
       "evaluations": [
         {
@@ -272,9 +255,103 @@
           "temporary_failures": [
             "robots_unavailable"
           ]
+        },
+        {
+          "domain": "thelittlekitchen.net",
+          "editorial_provenance_ratio": 0.0,
+          "external_canonical_ratio": 0.0,
+          "extraction_success_rate": null,
+          "fetch_success_rate": 1.0,
+          "field_completeness": 0.0,
+          "freshness_score": 50.0,
+          "hard_failures": [
+            "low_recipe_structure_yield",
+            "low_vertical_relevance",
+            "thin_recipe_content"
+          ],
+          "mean_rating_evidence_confidence": null,
+          "novelty_ratio": 0.0,
+          "pages_fetched": 1,
+          "pages_sampled": 1,
+          "qualifying_vertical_recipe_count": 1,
+          "quality_components": {
+            "crawl_stability": 100.0,
+            "editorial_provenance": 0.0,
+            "extraction_reliability": 0.0,
+            "freshness": 50.0,
+            "general_quality": 70.0,
+            "rating_integrity": 70.0,
+            "unique_contribution": 0.0,
+            "vertical_relevance": 1.75
+          },
+          "quality_score": 28.35,
+          "ranking_evidence_coverage_ratio": 0.0,
+          "ranking_evidence_pages": 0,
+          "ranking_row_yield": 0.0,
+          "rating_conflict_ratio": 0.0,
+          "rating_coverage_ratio": 0.0,
+          "recipe_structure_rate": 0.0,
+          "recipes_extracted": 0,
+          "recipes_recognized": 0,
+          "robots_status": "ok",
+          "sample_recipe_yield": 0.0,
+          "substantive_recipe_ratio": 0.0,
+          "suspicious_uniform_rating_evidence": false,
+          "temporary_failures": [
+            "insufficient_sample",
+            "insufficient_fetches",
+            "insufficient_vertical_recipe_body"
+          ],
+          "trap_url_ratio": 0.0,
+          "vertical_relevance_ratio": 0.0,
+          "within_source_duplicate_ratio": 0.0
+        },
+        {
+          "domain": "slowcookergourmet.net",
+          "editorial_provenance_ratio": 1.0,
+          "external_canonical_ratio": 0.0,
+          "extraction_success_rate": 1.0,
+          "fetch_success_rate": 1.0,
+          "field_completeness": 0.8333333333333334,
+          "freshness_score": 80.0,
+          "hard_failures": [
+            "low_recipe_structure_yield"
+          ],
+          "mean_rating_evidence_confidence": 0.65,
+          "novelty_ratio": 1.0,
+          "pages_fetched": 8,
+          "pages_sampled": 8,
+          "qualifying_vertical_recipe_count": 79,
+          "quality_components": {
+            "crawl_stability": 100.0,
+            "editorial_provenance": 100.0,
+            "extraction_reliability": 73.958,
+            "freshness": 80.0,
+            "general_quality": 100.0,
+            "rating_integrity": 100.0,
+            "unique_contribution": 100.0,
+            "vertical_relevance": 100.0
+          },
+          "quality_score": 93.792,
+          "ranking_evidence_coverage_ratio": 0.3333333333333333,
+          "ranking_evidence_pages": 1,
+          "ranking_row_yield": 0.3333333333333333,
+          "rating_conflict_ratio": 0.0,
+          "rating_coverage_ratio": 0.3333333333333333,
+          "recipe_structure_rate": 0.375,
+          "recipes_extracted": 1,
+          "recipes_recognized": 3,
+          "robots_status": "ok",
+          "sample_recipe_yield": 0.375,
+          "substantive_recipe_ratio": 1.0,
+          "suspicious_uniform_rating_evidence": false,
+          "temporary_failures": [],
+          "trap_url_ratio": 0.0,
+          "vertical_relevance_ratio": 1.0,
+          "within_source_duplicate_ratio": 0.0
         }
       ],
-      "generated_at": "2026-09-17T15:05:50.334569+00:00",
+      "generated_at": "2026-09-18T14:34:03.637894+00:00",
       "manual_source_count": 38,
       "median_source_quality_score": 0.0,
       "pinned_source_warnings": 0,
@@ -295,8 +372,8 @@
           "status": "ok"
         }
       ],
-      "qualification_extraction_success_rate": 0.0,
-      "qualification_pages_fetched": 0,
+      "qualification_extraction_success_rate": 0.3333333333333333,
+      "qualification_pages_fetched": 9,
       "source_gate_version": 2,
       "vertical": "slow_cooker"
     }
