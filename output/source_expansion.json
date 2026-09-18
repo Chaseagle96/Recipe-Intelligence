@@ -9,7 +9,71 @@
   "candidate_domains_quarantined": 4,
   "candidate_domains_rejected": 2,
   "candidate_domains_suspended": 0,
+  "catalog_net_change": 0,
+  "catalog_sync": [
+    {
+      "discovered_urls": 0,
+      "discovery_errors": [
+        "https://forktospoon.com/sitemap_index.xml:HTTPError",
+        "https://forktospoon.com/method/air-fryer/:HTTPError",
+        "https://forktospoon.com/air-fryer-parmesan-kale-chips/:HTTPError",
+        "https://forktospoon.com/do-air-fryers-use-radiation/:HTTPError",
+        "https://forktospoon.com/air-fryer-cranberry-orange-nut-bread/:HTTPError",
+        "https://forktospoon.com/what-to-put-under-your-air-fryer/:HTTPError"
+      ],
+      "elapsed_seconds": 0.6,
+      "new_urls": 0,
+      "robots_status": "ok",
+      "sitemap_docs": 1,
+      "source": "forktospoon.com",
+      "status": "degraded"
+    },
+    {
+      "discovered_urls": 415,
+      "discovery_errors": [],
+      "elapsed_seconds": 9.65,
+      "new_urls": 0,
+      "robots_status": "ok",
+      "sitemap_docs": 7,
+      "source": "kelvinskitchen.com",
+      "status": "ok"
+    },
+    {
+      "discovered_urls": 481,
+      "discovery_errors": [],
+      "elapsed_seconds": 6.46,
+      "new_urls": 0,
+      "robots_status": "ok",
+      "sitemap_docs": 7,
+      "source": "temeculablogs.com",
+      "status": "ok"
+    },
+    {
+      "discovered_urls": 227,
+      "discovery_errors": [],
+      "elapsed_seconds": 6.22,
+      "new_urls": 0,
+      "robots_status": "ok",
+      "sitemap_docs": 6,
+      "source": "thestayathomechef.com",
+      "status": "ok"
+    },
+    {
+      "discovered_urls": 318,
+      "discovery_errors": [],
+      "elapsed_seconds": 13.51,
+      "new_urls": 0,
+      "robots_status": "ok",
+      "sitemap_docs": 8,
+      "source": "theyummybowl.com",
+      "status": "ok"
+    }
+  ],
+  "catalog_sync_generated_at": "2026-09-18T15:23:24.050208+00:00",
   "catalog_url_count": 7763,
+  "catalog_urls_added_after_promotion": 0,
+  "catalog_urls_coalesced": 0,
+  "catalog_urls_rewritten": 0,
   "effective_source_count": 56,
   "evaluations": [
     {
