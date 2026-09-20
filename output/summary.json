@@ -338,8 +338,8 @@
   "authority": {
     "authoritative": false,
     "authority_contract_version": 2,
-    "catalog_sync_generated_at": null,
-    "invalidated_at": "2026-09-20T18:58:15.501425+00:00",
+    "catalog_sync_generated_at": "2026-09-20T18:58:42.989458+00:00",
+    "invalidated_at": "2026-09-20T20:34:28.439987+00:00",
     "last_ranking_generated_at": "2026-08-20T21:42:45.736996+00:00",
     "reason": "source_or_catalog_generation_advanced",
     "source_expansion_generated_at": "2026-09-20T17:13:55.067222+00:00",
