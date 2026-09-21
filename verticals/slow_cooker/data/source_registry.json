@@ -6411,6 +6411,190 @@
       },
       "timestamp": "2026-09-20T17:13:55.067222+00:00",
       "vertical": "slow_cooker"
+    },
+    {
+      "domain": "crock-pot.com",
+      "event": "SOURCE_QUARANTINED",
+      "metrics": {
+        "domain": "crock-pot.com",
+        "hard_failures": [],
+        "pages_fetched": 0,
+        "pages_sampled": 0,
+        "qualifying_vertical_recipe_count": 0,
+        "quality_score": 0.0,
+        "robots_status": "unreachable:TooManyRedirects",
+        "temporary_failures": [
+          "robots_unavailable"
+        ]
+      },
+      "new_state": "QUARANTINED",
+      "previous_state": "QUARANTINED",
+      "reason": "qualification incomplete: robots_unavailable",
+      "source_gate_version": 2,
+      "thresholds": {
+        "deep_fast_track_min_pages": 10,
+        "deep_fast_track_score": 88.0,
+        "promotion_min_qualifying_attempts": 2,
+        "qualification_score": 74.0,
+        "source_gate_version": 2
+      },
+      "timestamp": "2026-09-21T16:31:12.670051+00:00",
+      "vertical": "slow_cooker"
+    },
+    {
+      "domain": "365daysofcrockpot.com",
+      "event": "SOURCE_QUARANTINED",
+      "metrics": {
+        "domain": "365daysofcrockpot.com",
+        "hard_failures": [],
+        "pages_fetched": 0,
+        "pages_sampled": 0,
+        "qualifying_vertical_recipe_count": 0,
+        "quality_score": 0.0,
+        "robots_status": "unreachable:TooManyRedirects",
+        "temporary_failures": [
+          "robots_unavailable"
+        ]
+      },
+      "new_state": "QUARANTINED",
+      "previous_state": "QUARANTINED",
+      "reason": "qualification incomplete: robots_unavailable",
+      "source_gate_version": 2,
+      "thresholds": {
+        "deep_fast_track_min_pages": 10,
+        "deep_fast_track_score": 88.0,
+        "promotion_min_qualifying_attempts": 2,
+        "qualification_score": 74.0,
+        "source_gate_version": 2
+      },
+      "timestamp": "2026-09-21T16:31:12.670051+00:00",
+      "vertical": "slow_cooker"
+    },
+    {
+      "domain": "marthastewart.com",
+      "event": "SOURCE_QUARANTINED",
+      "metrics": {
+        "domain": "marthastewart.com",
+        "hard_failures": [],
+        "pages_fetched": 0,
+        "pages_sampled": 0,
+        "qualifying_vertical_recipe_count": 0,
+        "quality_score": 0.0,
+        "robots_status": "unreachable:TooManyRedirects",
+        "temporary_failures": [
+          "robots_unavailable"
+        ]
+      },
+      "new_state": "QUARANTINED",
+      "previous_state": "QUARANTINED",
+      "reason": "qualification incomplete: robots_unavailable",
+      "source_gate_version": 2,
+      "thresholds": {
+        "deep_fast_track_min_pages": 10,
+        "deep_fast_track_score": 88.0,
+        "promotion_min_qualifying_attempts": 2,
+        "qualification_score": 74.0,
+        "source_gate_version": 2
+      },
+      "timestamp": "2026-09-21T16:31:12.670051+00:00",
+      "vertical": "slow_cooker"
+    },
+    {
+      "domain": "eatwell101.com",
+      "event": "SOURCE_QUARANTINED",
+      "metrics": {
+        "domain": "eatwell101.com",
+        "hard_failures": [],
+        "pages_fetched": 0,
+        "pages_sampled": 0,
+        "qualifying_vertical_recipe_count": 0,
+        "quality_score": 0.0,
+        "robots_status": "unreachable:TooManyRedirects",
+        "temporary_failures": [
+          "robots_unavailable"
+        ]
+      },
+      "new_state": "QUARANTINED",
+      "previous_state": "QUARANTINED",
+      "reason": "qualification incomplete: robots_unavailable",
+      "source_gate_version": 2,
+      "thresholds": {
+        "deep_fast_track_min_pages": 10,
+        "deep_fast_track_score": 88.0,
+        "promotion_min_qualifying_attempts": 2,
+        "qualification_score": 74.0,
+        "source_gate_version": 2
+      },
+      "timestamp": "2026-09-21T16:31:12.670051+00:00",
+      "vertical": "slow_cooker"
+    },
+    {
+      "domain": "epicurious.com",
+      "event": "SOURCE_REJECTED",
+      "metrics": {
+        "domain": "epicurious.com",
+        "editorial_provenance_ratio": 0.0,
+        "external_canonical_ratio": 0.0,
+        "extraction_success_rate": null,
+        "fetch_success_rate": 0.0,
+        "field_completeness": 0.0,
+        "freshness_score": 50.0,
+        "hard_failures": [
+          "low_recipe_structure_yield",
+          "low_vertical_relevance",
+          "thin_recipe_content"
+        ],
+        "mean_rating_evidence_confidence": null,
+        "novelty_ratio": 0.0,
+        "pages_fetched": 0,
+        "pages_sampled": 1,
+        "qualifying_vertical_recipe_count": 1,
+        "quality_components": {
+          "crawl_stability": 0.0,
+          "editorial_provenance": 0.0,
+          "extraction_reliability": 0.0,
+          "freshness": 50.0,
+          "general_quality": 70.0,
+          "rating_integrity": 70.0,
+          "unique_contribution": 0.0,
+          "vertical_relevance": 1.75
+        },
+        "quality_score": 13.35,
+        "ranking_evidence_coverage_ratio": 0.0,
+        "ranking_evidence_pages": 0,
+        "ranking_row_yield": 0.0,
+        "rating_conflict_ratio": 0.0,
+        "rating_coverage_ratio": 0.0,
+        "recipe_structure_rate": 0.0,
+        "recipes_extracted": 0,
+        "recipes_recognized": 0,
+        "robots_status": "ok",
+        "sample_recipe_yield": 0.0,
+        "substantive_recipe_ratio": 0.0,
+        "suspicious_uniform_rating_evidence": false,
+        "temporary_failures": [
+          "insufficient_sample",
+          "insufficient_fetches",
+          "insufficient_vertical_recipe_body",
+          "low_fetch_success"
+        ],
+        "trap_url_ratio": 0.0,
+        "vertical_relevance_ratio": 0.0,
+        "within_source_duplicate_ratio": 0.0
+      },
+      "new_state": "REJECTED",
+      "previous_state": "REJECTED",
+      "reason": "hard source gate failed: low_recipe_structure_yield, low_vertical_relevance, thin_recipe_content",
+      "source_gate_version": 2,
+      "thresholds": {
+        "deep_fast_track_min_pages": 10,
+        "deep_fast_track_score": 88.0,
+        "promotion_min_qualifying_attempts": 2,
+        "qualification_score": 74.0,
+        "source_gate_version": 2
+      },
+      "timestamp": "2026-09-21T16:31:12.670051+00:00",
+      "vertical": "slow_cooker"
     }
   ],
   "candidates": {
@@ -6419,7 +6603,7 @@
       "consecutive_healthy_runs": 0,
       "consecutive_qualifying_attempts": 0,
       "crawl_config": {},
-      "discovery_count": 46,
+      "discovery_count": 47,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -6436,8 +6620,8 @@
       ],
       "domain": "365daysofcrockpot.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-09-20T17:13:55.067222+00:00",
-      "last_evaluated_at": "2026-09-20T17:13:55.067222+00:00",
+      "last_discovered_at": "2026-09-21T16:31:12.670051+00:00",
+      "last_evaluated_at": "2026-09-21T16:31:12.670051+00:00",
       "last_qualification_metrics": {
         "domain": "365daysofcrockpot.com",
         "hard_failures": [],
@@ -6453,12 +6637,12 @@
       "origin": "discovered",
       "pinned": false,
       "promotion_eligible": false,
-      "qualification_attempts": 35,
+      "qualification_attempts": 36,
       "quality_score": 0.0,
       "rediscovery_blocked": false,
       "status": "QUARANTINED",
       "status_reason": "qualification incomplete: robots_unavailable",
-      "updated_at": "2026-09-20T17:13:55.067222+00:00",
+      "updated_at": "2026-09-21T16:31:12.670051+00:00",
       "vertical": "slow_cooker"
     },
     "amzlink.to": {
@@ -6636,7 +6820,7 @@
       "consecutive_healthy_runs": 0,
       "consecutive_qualifying_attempts": 0,
       "crawl_config": {},
-      "discovery_count": 50,
+      "discovery_count": 51,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -6653,8 +6837,8 @@
       ],
       "domain": "crock-pot.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-09-20T17:13:55.067222+00:00",
-      "last_evaluated_at": "2026-09-20T17:13:55.067222+00:00",
+      "last_discovered_at": "2026-09-21T16:31:12.670051+00:00",
+      "last_evaluated_at": "2026-09-21T16:31:12.670051+00:00",
       "last_qualification_metrics": {
         "domain": "crock-pot.com",
         "hard_failures": [],
@@ -6670,12 +6854,12 @@
       "origin": "discovered",
       "pinned": false,
       "promotion_eligible": false,
-      "qualification_attempts": 34,
+      "qualification_attempts": 35,
       "quality_score": 0.0,
       "rediscovery_blocked": false,
       "status": "QUARANTINED",
       "status_reason": "qualification incomplete: robots_unavailable",
-      "updated_at": "2026-09-20T17:13:55.067222+00:00",
+      "updated_at": "2026-09-21T16:31:12.670051+00:00",
       "vertical": "slow_cooker"
     },
     "eatwell101.com": {
@@ -6683,7 +6867,7 @@
       "consecutive_healthy_runs": 0,
       "consecutive_qualifying_attempts": 0,
       "crawl_config": {},
-      "discovery_count": 35,
+      "discovery_count": 36,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -6694,8 +6878,8 @@
       ],
       "domain": "eatwell101.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-09-20T17:13:55.067222+00:00",
-      "last_evaluated_at": "2026-09-20T17:13:55.067222+00:00",
+      "last_discovered_at": "2026-09-21T16:31:12.670051+00:00",
+      "last_evaluated_at": "2026-09-21T16:31:12.670051+00:00",
       "last_qualification_metrics": {
         "domain": "eatwell101.com",
         "hard_failures": [],
@@ -6711,12 +6895,12 @@
       "origin": "discovered",
       "pinned": false,
       "promotion_eligible": false,
-      "qualification_attempts": 34,
+      "qualification_attempts": 35,
       "quality_score": 0.0,
       "rediscovery_blocked": false,
       "status": "QUARANTINED",
       "status_reason": "qualification incomplete: robots_unavailable",
-      "updated_at": "2026-09-20T17:13:55.067222+00:00",
+      "updated_at": "2026-09-21T16:31:12.670051+00:00",
       "vertical": "slow_cooker"
     },
     "epicurious.com": {
@@ -6730,12 +6914,12 @@
           "https://www.epicurious.com/recipes-menus/crock-pot-slow-cooker-recipes"
         ],
         "include_pattern": "(?:slow[-_ ]?cook(?:er|ing|ed)|crock[-_ ]?pot)",
-        "max_urls": 300,
+        "max_urls": 200,
         "sitemap_urls": [
           "https://epicurious.com/sitemap.xml"
         ]
       },
-      "discovery_count": 46,
+      "discovery_count": 47,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -6752,8 +6936,8 @@
       ],
       "domain": "epicurious.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-09-20T17:13:55.067222+00:00",
-      "last_evaluated_at": "2026-08-21T20:04:19.395783+00:00",
+      "last_discovered_at": "2026-09-21T16:31:12.670051+00:00",
+      "last_evaluated_at": "2026-09-21T16:31:12.670051+00:00",
       "last_qualification_metrics": {
         "domain": "epicurious.com",
         "editorial_provenance_ratio": 0.0,
@@ -6808,14 +6992,14 @@
       "origin": "discovered",
       "pinned": false,
       "promotion_eligible": false,
-      "qualification_attempts": 11,
+      "qualification_attempts": 12,
       "quality_score": 13.35,
       "rediscovery_blocked": false,
-      "rejection_cooldown_until": "2026-09-20T20:04:19.395783+00:00",
+      "rejection_cooldown_until": "2026-10-21T16:31:12.670051+00:00",
       "rejection_reason": "hard source gate failed: low_recipe_structure_yield, low_vertical_relevance, thin_recipe_content",
       "status": "REJECTED",
       "status_reason": "hard source gate failed: low_recipe_structure_yield, low_vertical_relevance, thin_recipe_content",
-      "updated_at": "2026-08-21T20:04:19.395783+00:00",
+      "updated_at": "2026-09-21T16:31:12.670051+00:00",
       "vertical": "slow_cooker"
     },
     "forktospoon.com": {
@@ -6838,7 +7022,7 @@
           "https://forktospoon.com/sitemap_index.xml"
         ]
       },
-      "discovery_count": 35,
+      "discovery_count": 36,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -6849,7 +7033,7 @@
       ],
       "domain": "forktospoon.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-09-20T17:13:55.067222+00:00",
+      "last_discovered_at": "2026-09-21T16:31:12.670051+00:00",
       "last_evaluated_at": "2026-08-19T08:48:22.552952+00:00",
       "last_qualification_metrics": {
         "domain": "forktospoon.com",
@@ -6955,7 +7139,7 @@
           "https://kelvinskitchen.com/sitemap_index.xml"
         ]
       },
-      "discovery_count": 35,
+      "discovery_count": 36,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -6966,7 +7150,7 @@
       ],
       "domain": "kelvinskitchen.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-09-20T17:13:55.067222+00:00",
+      "last_discovered_at": "2026-09-21T16:31:12.670051+00:00",
       "last_evaluated_at": "2026-08-19T08:48:22.552952+00:00",
       "last_qualification_metrics": {
         "domain": "kelvinskitchen.com",
@@ -7025,7 +7209,7 @@
       "consecutive_healthy_runs": 0,
       "consecutive_qualifying_attempts": 0,
       "crawl_config": {},
-      "discovery_count": 46,
+      "discovery_count": 47,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -7042,8 +7226,8 @@
       ],
       "domain": "marthastewart.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-09-20T17:13:55.067222+00:00",
-      "last_evaluated_at": "2026-09-20T17:13:55.067222+00:00",
+      "last_discovered_at": "2026-09-21T16:31:12.670051+00:00",
+      "last_evaluated_at": "2026-09-21T16:31:12.670051+00:00",
       "last_qualification_metrics": {
         "domain": "marthastewart.com",
         "hard_failures": [],
@@ -7059,12 +7243,12 @@
       "origin": "discovered",
       "pinned": false,
       "promotion_eligible": false,
-      "qualification_attempts": 35,
+      "qualification_attempts": 36,
       "quality_score": 0.0,
       "rediscovery_blocked": false,
       "status": "QUARANTINED",
       "status_reason": "qualification incomplete: robots_unavailable",
-      "updated_at": "2026-09-20T17:13:55.067222+00:00",
+      "updated_at": "2026-09-21T16:31:12.670051+00:00",
       "vertical": "slow_cooker"
     },
     "rstyle.me": {
@@ -7174,7 +7358,7 @@
           "http://slowcookergourmet.net/sitemap19.xml"
         ]
       },
-      "discovery_count": 46,
+      "discovery_count": 47,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -7191,7 +7375,7 @@
       ],
       "domain": "slowcookergourmet.net",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-09-20T17:13:55.067222+00:00",
+      "last_discovered_at": "2026-09-21T16:31:12.670051+00:00",
       "last_evaluated_at": "2026-09-18T14:34:03.637894+00:00",
       "last_qualification_metrics": {
         "domain": "slowcookergourmet.net",
@@ -7270,7 +7454,7 @@
           "https://temeculablogs.com/sitemap_index.xml"
         ]
       },
-      "discovery_count": 35,
+      "discovery_count": 36,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -7281,7 +7465,7 @@
       ],
       "domain": "temeculablogs.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-09-20T17:13:55.067222+00:00",
+      "last_discovered_at": "2026-09-21T16:31:12.670051+00:00",
       "last_evaluated_at": "2026-08-19T10:40:38.207970+00:00",
       "last_qualification_metrics": {
         "domain": "temeculablogs.com",
@@ -7354,7 +7538,7 @@
           "https://thelittlekitchen.net/sitemap.xml"
         ]
       },
-      "discovery_count": 50,
+      "discovery_count": 51,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -7371,7 +7555,7 @@
       ],
       "domain": "thelittlekitchen.net",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-09-20T17:13:55.067222+00:00",
+      "last_discovered_at": "2026-09-21T16:31:12.670051+00:00",
       "last_evaluated_at": "2026-09-18T14:34:03.637894+00:00",
       "last_qualification_metrics": {
         "domain": "thelittlekitchen.net",
@@ -7456,7 +7640,7 @@
           "https://www.themagicalslowcooker.com/sitemap_index.xml"
         ]
       },
-      "discovery_count": 46,
+      "discovery_count": 47,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -7473,7 +7657,7 @@
       ],
       "domain": "themagicalslowcooker.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-09-20T17:13:55.067222+00:00",
+      "last_discovered_at": "2026-09-21T16:31:12.670051+00:00",
       "last_evaluated_at": "2026-09-19T13:57:29.264117+00:00",
       "last_qualification_metrics": {
         "domain": "themagicalslowcooker.com",
@@ -7557,7 +7741,7 @@
           "https://thestayathomechef.com/sitemap_index.xml"
         ]
       },
-      "discovery_count": 35,
+      "discovery_count": 36,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -7568,7 +7752,7 @@
       ],
       "domain": "thestayathomechef.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-09-20T17:13:55.067222+00:00",
+      "last_discovered_at": "2026-09-21T16:31:12.670051+00:00",
       "last_evaluated_at": "2026-08-19T10:40:38.207970+00:00",
       "last_qualification_metrics": {
         "domain": "thestayathomechef.com",
@@ -7645,7 +7829,7 @@
           "https://theyummybowl.com/sitemap_index.xml"
         ]
       },
-      "discovery_count": 35,
+      "discovery_count": 36,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -7656,7 +7840,7 @@
       ],
       "domain": "theyummybowl.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-09-20T17:13:55.067222+00:00",
+      "last_discovered_at": "2026-09-21T16:31:12.670051+00:00",
       "last_evaluated_at": "2026-09-19T13:57:29.264117+00:00",
       "last_qualification_metrics": {
         "domain": "theyummybowl.com",
