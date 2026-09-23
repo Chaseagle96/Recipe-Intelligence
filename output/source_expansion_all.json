@@ -1,4 +1,5 @@
 {
+  "catalog_sync_generated_at": "2026-09-23T15:44:31.147297+00:00",
   "generated_at": "2026-09-23T15:06:12.648244+00:00",
   "mode": "daily",
   "source_gate_version": 2,
@@ -14,7 +15,85 @@
       "candidate_domains_quarantined": 4,
       "candidate_domains_rejected": 0,
       "candidate_domains_suspended": 0,
+      "catalog_net_change": 0,
+      "catalog_sync": [
+        {
+          "discovered_urls": 0,
+          "discovery_errors": [
+            "https://forktospoon.com/sitemap_index.xml:HTTPError",
+            "https://forktospoon.com/method/air-fryer/:HTTPError",
+            "https://forktospoon.com/air-fryer-parmesan-kale-chips/:HTTPError",
+            "https://forktospoon.com/do-air-fryers-use-radiation/:HTTPError",
+            "https://forktospoon.com/air-fryer-cranberry-orange-nut-bread/:HTTPError",
+            "https://forktospoon.com/what-to-put-under-your-air-fryer/:HTTPError"
+          ],
+          "elapsed_seconds": 0.7,
+          "new_urls": 0,
+          "robots_status": "ok",
+          "sitemap_docs": 1,
+          "source": "forktospoon.com",
+          "status": "degraded"
+        },
+        {
+          "discovered_urls": 409,
+          "discovery_errors": [],
+          "elapsed_seconds": 11.24,
+          "new_urls": 0,
+          "robots_status": "ok",
+          "sitemap_docs": 7,
+          "source": "kelvinskitchen.com",
+          "status": "ok"
+        },
+        {
+          "discovered_urls": 0,
+          "discovery_errors": [
+            "https://temeculablogs.com/sitemap_index.xml:HTTPError",
+            "https://temeculablogs.com/air-fryer-chicken-and-vegetables/:HTTPError",
+            "https://temeculablogs.com/frozen-burrito-in-air-fryer/:HTTPError",
+            "https://temeculablogs.com/frozen-chicken-tenderloins-in-air-fryer/:HTTPError",
+            "https://temeculablogs.com/air-fryer-shrimp-no-breading/:HTTPError",
+            "https://temeculablogs.com/air-fryer-zucchini-fries/:HTTPError"
+          ],
+          "elapsed_seconds": 0.74,
+          "new_urls": 0,
+          "robots_status": "ok",
+          "sitemap_docs": 1,
+          "source": "temeculablogs.com",
+          "status": "degraded"
+        },
+        {
+          "discovered_urls": 0,
+          "discovery_errors": [
+            "https://thestayathomechef.com/sitemap_index.xml:HTTPError",
+            "https://thestayathomechef.com/air-fryer-chicken-recipes/:HTTPError",
+            "https://thestayathomechef.com/air-fryer-steak/:HTTPError",
+            "https://thestayathomechef.com/lemon-garlic-air-fryer-salmon-bites/:HTTPError",
+            "https://thestayathomechef.com/air-fryer-steak-bites-and-potatoes/:HTTPError",
+            "https://thestayathomechef.com/air-fryer-fish/:HTTPError"
+          ],
+          "elapsed_seconds": 0.71,
+          "new_urls": 0,
+          "robots_status": "ok",
+          "sitemap_docs": 1,
+          "source": "thestayathomechef.com",
+          "status": "degraded"
+        },
+        {
+          "discovered_urls": 319,
+          "discovery_errors": [],
+          "elapsed_seconds": 10.34,
+          "new_urls": 0,
+          "robots_status": "ok",
+          "sitemap_docs": 8,
+          "source": "theyummybowl.com",
+          "status": "ok"
+        }
+      ],
+      "catalog_sync_generated_at": "2026-09-23T15:44:31.147297+00:00",
       "catalog_url_count": 7764,
+      "catalog_urls_added_after_promotion": 0,
+      "catalog_urls_coalesced": 0,
+      "catalog_urls_rewritten": 0,
       "effective_source_count": 56,
       "evaluations": [
         {
