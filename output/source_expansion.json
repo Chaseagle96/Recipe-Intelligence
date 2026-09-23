@@ -2,85 +2,14 @@
   "auto_source_count": 5,
   "candidate_domains_active": 5,
   "candidate_domains_degraded": 0,
-  "candidate_domains_discovered": 566,
+  "candidate_domains_discovered": 579,
   "candidate_domains_evaluated": 4,
   "candidate_domains_new": 0,
   "candidate_domains_promoted": 0,
   "candidate_domains_quarantined": 4,
   "candidate_domains_rejected": 0,
   "candidate_domains_suspended": 0,
-  "catalog_net_change": 0,
-  "catalog_sync": [
-    {
-      "discovered_urls": 0,
-      "discovery_errors": [
-        "https://forktospoon.com/sitemap_index.xml:HTTPError",
-        "https://forktospoon.com/method/air-fryer/:HTTPError",
-        "https://forktospoon.com/air-fryer-parmesan-kale-chips/:HTTPError",
-        "https://forktospoon.com/do-air-fryers-use-radiation/:HTTPError",
-        "https://forktospoon.com/air-fryer-cranberry-orange-nut-bread/:HTTPError",
-        "https://forktospoon.com/what-to-put-under-your-air-fryer/:HTTPError"
-      ],
-      "elapsed_seconds": 0.32,
-      "new_urls": 0,
-      "robots_status": "ok",
-      "sitemap_docs": 1,
-      "source": "forktospoon.com",
-      "status": "degraded"
-    },
-    {
-      "discovered_urls": 409,
-      "discovery_errors": [],
-      "elapsed_seconds": 11.44,
-      "new_urls": 0,
-      "robots_status": "ok",
-      "sitemap_docs": 7,
-      "source": "kelvinskitchen.com",
-      "status": "ok"
-    },
-    {
-      "discovered_urls": 0,
-      "discovery_errors": [
-        "https://temeculablogs.com/sitemap_index.xml:HTTPError",
-        "https://temeculablogs.com/air-fryer-chicken-and-vegetables/:HTTPError",
-        "https://temeculablogs.com/frozen-burrito-in-air-fryer/:HTTPError",
-        "https://temeculablogs.com/frozen-chicken-tenderloins-in-air-fryer/:HTTPError",
-        "https://temeculablogs.com/air-fryer-shrimp-no-breading/:HTTPError",
-        "https://temeculablogs.com/air-fryer-zucchini-fries/:HTTPError"
-      ],
-      "elapsed_seconds": 0.34,
-      "new_urls": 0,
-      "robots_status": "ok",
-      "sitemap_docs": 1,
-      "source": "temeculablogs.com",
-      "status": "degraded"
-    },
-    {
-      "discovered_urls": 227,
-      "discovery_errors": [],
-      "elapsed_seconds": 8.42,
-      "new_urls": 0,
-      "robots_status": "ok",
-      "sitemap_docs": 6,
-      "source": "thestayathomechef.com",
-      "status": "ok"
-    },
-    {
-      "discovered_urls": 319,
-      "discovery_errors": [],
-      "elapsed_seconds": 12.78,
-      "new_urls": 0,
-      "robots_status": "ok",
-      "sitemap_docs": 8,
-      "source": "theyummybowl.com",
-      "status": "ok"
-    }
-  ],
-  "catalog_sync_generated_at": "2026-09-22T15:22:57.605802+00:00",
   "catalog_url_count": 7764,
-  "catalog_urls_added_after_promotion": 0,
-  "catalog_urls_coalesced": 0,
-  "catalog_urls_rewritten": 0,
   "effective_source_count": 56,
   "evaluations": [
     {
@@ -132,7 +61,7 @@
       ]
     }
   ],
-  "generated_at": "2026-09-22T15:02:06.392029+00:00",
+  "generated_at": "2026-09-23T15:06:12.648244+00:00",
   "manual_source_count": 51,
   "median_source_quality_score": 0.0,
   "pinned_source_warnings": 0,
@@ -148,7 +77,7 @@
     },
     {
       "hits": 0,
-      "pages_fetched": 2,
+      "pages_fetched": 1,
       "provider": "trusted_outbound_link",
       "status": "ok"
     }
