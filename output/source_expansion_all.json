@@ -1,6 +1,5 @@
 {
-  "catalog_sync_generated_at": "2026-09-25T15:37:58.115681+00:00",
-  "generated_at": "2026-09-25T15:21:08.378086+00:00",
+  "generated_at": "2026-09-26T14:34:34.355755+00:00",
   "mode": "daily",
   "source_gate_version": 2,
   "verticals": {
@@ -8,92 +7,14 @@
       "auto_source_count": 5,
       "candidate_domains_active": 5,
       "candidate_domains_degraded": 0,
-      "candidate_domains_discovered": 605,
+      "candidate_domains_discovered": 618,
       "candidate_domains_evaluated": 4,
       "candidate_domains_new": 0,
       "candidate_domains_promoted": 0,
       "candidate_domains_quarantined": 4,
       "candidate_domains_rejected": 0,
       "candidate_domains_suspended": 0,
-      "catalog_net_change": 0,
-      "catalog_sync": [
-        {
-          "discovered_urls": 0,
-          "discovery_errors": [
-            "https://forktospoon.com/sitemap_index.xml:HTTPError",
-            "https://forktospoon.com/method/air-fryer/:HTTPError",
-            "https://forktospoon.com/air-fryer-parmesan-kale-chips/:HTTPError",
-            "https://forktospoon.com/do-air-fryers-use-radiation/:HTTPError",
-            "https://forktospoon.com/air-fryer-cranberry-orange-nut-bread/:HTTPError",
-            "https://forktospoon.com/what-to-put-under-your-air-fryer/:HTTPError"
-          ],
-          "elapsed_seconds": 0.66,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 1,
-          "source": "forktospoon.com",
-          "status": "degraded"
-        },
-        {
-          "discovered_urls": 409,
-          "discovery_errors": [],
-          "elapsed_seconds": 7.88,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 7,
-          "source": "kelvinskitchen.com",
-          "status": "ok"
-        },
-        {
-          "discovered_urls": 0,
-          "discovery_errors": [
-            "https://temeculablogs.com/sitemap_index.xml:HTTPError",
-            "https://temeculablogs.com/air-fryer-chicken-and-vegetables/:HTTPError",
-            "https://temeculablogs.com/frozen-burrito-in-air-fryer/:HTTPError",
-            "https://temeculablogs.com/frozen-chicken-tenderloins-in-air-fryer/:HTTPError",
-            "https://temeculablogs.com/air-fryer-shrimp-no-breading/:HTTPError",
-            "https://temeculablogs.com/air-fryer-zucchini-fries/:HTTPError"
-          ],
-          "elapsed_seconds": 0.66,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 1,
-          "source": "temeculablogs.com",
-          "status": "degraded"
-        },
-        {
-          "discovered_urls": 0,
-          "discovery_errors": [
-            "https://thestayathomechef.com/sitemap_index.xml:HTTPError",
-            "https://thestayathomechef.com/air-fryer-chicken-recipes/:HTTPError",
-            "https://thestayathomechef.com/air-fryer-steak/:HTTPError",
-            "https://thestayathomechef.com/lemon-garlic-air-fryer-salmon-bites/:HTTPError",
-            "https://thestayathomechef.com/air-fryer-steak-bites-and-potatoes/:HTTPError",
-            "https://thestayathomechef.com/air-fryer-fish/:HTTPError"
-          ],
-          "elapsed_seconds": 0.67,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 1,
-          "source": "thestayathomechef.com",
-          "status": "degraded"
-        },
-        {
-          "discovered_urls": 319,
-          "discovery_errors": [],
-          "elapsed_seconds": 11.91,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 8,
-          "source": "theyummybowl.com",
-          "status": "ok"
-        }
-      ],
-      "catalog_sync_generated_at": "2026-09-25T15:37:07.214502+00:00",
       "catalog_url_count": 7764,
-      "catalog_urls_added_after_promotion": 0,
-      "catalog_urls_coalesced": 0,
-      "catalog_urls_rewritten": 0,
       "effective_source_count": 56,
       "evaluations": [
         {
@@ -145,7 +66,7 @@
           ]
         }
       ],
-      "generated_at": "2026-09-25T15:21:08.378086+00:00",
+      "generated_at": "2026-09-26T14:34:34.355755+00:00",
       "manual_source_count": 51,
       "median_source_quality_score": 0.0,
       "pinned_source_warnings": 0,
@@ -175,82 +96,14 @@
       "auto_source_count": 4,
       "candidate_domains_active": 0,
       "candidate_domains_degraded": 0,
-      "candidate_domains_discovered": 624,
+      "candidate_domains_discovered": 637,
       "candidate_domains_evaluated": 4,
       "candidate_domains_new": 0,
       "candidate_domains_promoted": 0,
       "candidate_domains_quarantined": 4,
       "candidate_domains_rejected": 0,
       "candidate_domains_suspended": 0,
-      "catalog_net_change": 0,
-      "catalog_sync": [
-        {
-          "discovered_urls": 0,
-          "discovery_errors": [
-            "https://forktospoon.com/sitemap_index.xml:HTTPError",
-            "https://forktospoon.com/slow-cooker-meatball-sliders/:HTTPError",
-            "https://forktospoon.com/slow-cooker-flank-steak/:HTTPError",
-            "https://forktospoon.com/easy-crock-pot-frozen-meatballs/:HTTPError",
-            "https://forktospoon.com/slow-cooker-cajun-jambalaya-recipe/:HTTPError",
-            "https://forktospoon.com/25-family-friendly-crockpot-dinners-your-kids-will-devour/:HTTPError"
-          ],
-          "elapsed_seconds": 0.45,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 1,
-          "source": "forktospoon.com",
-          "status": "degraded"
-        },
-        {
-          "discovered_urls": 162,
-          "discovery_errors": [],
-          "elapsed_seconds": 5.69,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 7,
-          "source": "kelvinskitchen.com",
-          "status": "ok"
-        },
-        {
-          "discovered_urls": 0,
-          "discovery_errors": [
-            "https://temeculablogs.com/sitemap_index.xml:HTTPError",
-            "https://temeculablogs.com/frozen-pork-loin-in-crock-pot/:HTTPError",
-            "https://temeculablogs.com/easy-crockpot-lasagna-recipe/:HTTPError",
-            "https://temeculablogs.com/cheesy-hashbrown-potatoes-crockpot/:HTTPError",
-            "https://temeculablogs.com/crockpot-lasagna-soup/:HTTPError",
-            "https://temeculablogs.com/crockpot-brownie-cookies/:HTTPError"
-          ],
-          "elapsed_seconds": 0.41,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 1,
-          "source": "temeculablogs.com",
-          "status": "degraded"
-        },
-        {
-          "discovered_urls": 0,
-          "discovery_errors": [
-            "https://thestayathomechef.com/sitemap_index.xml:HTTPError",
-            "https://thestayathomechef.com/slow-cooker-raspberry-chipotle-baby/:HTTPError",
-            "https://thestayathomechef.com/slow-cooker-spicy-crab-dip/:HTTPError",
-            "https://thestayathomechef.com/slow-cooker-strawberry-chipotle-bbq/:HTTPError",
-            "https://thestayathomechef.com/slow-cooker-jalapeno-scalloped-potatoes/:HTTPError",
-            "https://thestayathomechef.com/slow-cooker-carne-asada/:HTTPError"
-          ],
-          "elapsed_seconds": 0.48,
-          "new_urls": 0,
-          "robots_status": "ok",
-          "sitemap_docs": 1,
-          "source": "thestayathomechef.com",
-          "status": "degraded"
-        }
-      ],
-      "catalog_sync_generated_at": "2026-09-25T15:37:58.115681+00:00",
       "catalog_url_count": 4074,
-      "catalog_urls_added_after_promotion": 0,
-      "catalog_urls_coalesced": 0,
-      "catalog_urls_rewritten": 0,
       "effective_source_count": 42,
       "evaluations": [
         {
@@ -302,7 +155,7 @@
           ]
         }
       ],
-      "generated_at": "2026-09-25T15:21:08.378086+00:00",
+      "generated_at": "2026-09-26T14:34:34.355755+00:00",
       "manual_source_count": 38,
       "median_source_quality_score": 0.0,
       "pinned_source_warnings": 0,
