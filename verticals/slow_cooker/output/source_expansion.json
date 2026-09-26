@@ -9,7 +9,75 @@
   "candidate_domains_quarantined": 4,
   "candidate_domains_rejected": 0,
   "candidate_domains_suspended": 0,
+  "catalog_net_change": 0,
+  "catalog_sync": [
+    {
+      "discovered_urls": 0,
+      "discovery_errors": [
+        "https://forktospoon.com/sitemap_index.xml:HTTPError",
+        "https://forktospoon.com/slow-cooker-meatball-sliders/:HTTPError",
+        "https://forktospoon.com/slow-cooker-flank-steak/:HTTPError",
+        "https://forktospoon.com/easy-crock-pot-frozen-meatballs/:HTTPError",
+        "https://forktospoon.com/slow-cooker-cajun-jambalaya-recipe/:HTTPError",
+        "https://forktospoon.com/25-family-friendly-crockpot-dinners-your-kids-will-devour/:HTTPError"
+      ],
+      "elapsed_seconds": 0.32,
+      "new_urls": 0,
+      "robots_status": "ok",
+      "sitemap_docs": 1,
+      "source": "forktospoon.com",
+      "status": "degraded"
+    },
+    {
+      "discovered_urls": 162,
+      "discovery_errors": [],
+      "elapsed_seconds": 5.57,
+      "new_urls": 0,
+      "robots_status": "ok",
+      "sitemap_docs": 7,
+      "source": "kelvinskitchen.com",
+      "status": "ok"
+    },
+    {
+      "discovered_urls": 0,
+      "discovery_errors": [
+        "https://temeculablogs.com/sitemap_index.xml:HTTPError",
+        "https://temeculablogs.com/frozen-pork-loin-in-crock-pot/:HTTPError",
+        "https://temeculablogs.com/easy-crockpot-lasagna-recipe/:HTTPError",
+        "https://temeculablogs.com/cheesy-hashbrown-potatoes-crockpot/:HTTPError",
+        "https://temeculablogs.com/crockpot-lasagna-soup/:HTTPError",
+        "https://temeculablogs.com/crockpot-brownie-cookies/:HTTPError"
+      ],
+      "elapsed_seconds": 0.34,
+      "new_urls": 0,
+      "robots_status": "ok",
+      "sitemap_docs": 1,
+      "source": "temeculablogs.com",
+      "status": "degraded"
+    },
+    {
+      "discovered_urls": 0,
+      "discovery_errors": [
+        "https://thestayathomechef.com/sitemap_index.xml:HTTPError",
+        "https://thestayathomechef.com/slow-cooker-raspberry-chipotle-baby/:HTTPError",
+        "https://thestayathomechef.com/slow-cooker-spicy-crab-dip/:HTTPError",
+        "https://thestayathomechef.com/slow-cooker-strawberry-chipotle-bbq/:HTTPError",
+        "https://thestayathomechef.com/slow-cooker-jalapeno-scalloped-potatoes/:HTTPError",
+        "https://thestayathomechef.com/slow-cooker-carne-asada/:HTTPError"
+      ],
+      "elapsed_seconds": 0.35,
+      "new_urls": 0,
+      "robots_status": "ok",
+      "sitemap_docs": 1,
+      "source": "thestayathomechef.com",
+      "status": "degraded"
+    }
+  ],
+  "catalog_sync_generated_at": "2026-09-26T15:34:21.672539+00:00",
   "catalog_url_count": 4074,
+  "catalog_urls_added_after_promotion": 0,
+  "catalog_urls_coalesced": 0,
+  "catalog_urls_rewritten": 0,
   "effective_source_count": 42,
   "evaluations": [
     {
