@@ -8754,6 +8754,122 @@
       },
       "timestamp": "2026-10-05T19:21:00.382200+00:00",
       "vertical": "air_fryer"
+    },
+    {
+      "domain": "eatwell101.com",
+      "event": "SOURCE_QUARANTINED",
+      "metrics": {
+        "domain": "eatwell101.com",
+        "hard_failures": [],
+        "pages_fetched": 0,
+        "pages_sampled": 0,
+        "qualifying_vertical_recipe_count": 0,
+        "quality_score": 0.0,
+        "robots_status": "unreachable:TooManyRedirects",
+        "temporary_failures": [
+          "robots_unavailable"
+        ]
+      },
+      "new_state": "QUARANTINED",
+      "previous_state": "QUARANTINED",
+      "reason": "qualification incomplete: robots_unavailable",
+      "source_gate_version": 2,
+      "thresholds": {
+        "deep_fast_track_min_pages": 10,
+        "deep_fast_track_score": 88.0,
+        "promotion_min_qualifying_attempts": 2,
+        "qualification_score": 74.0,
+        "source_gate_version": 2
+      },
+      "timestamp": "2026-10-06T16:53:11.719648+00:00",
+      "vertical": "air_fryer"
+    },
+    {
+      "domain": "365daysofcrockpot.com",
+      "event": "SOURCE_QUARANTINED",
+      "metrics": {
+        "domain": "365daysofcrockpot.com",
+        "hard_failures": [],
+        "pages_fetched": 0,
+        "pages_sampled": 0,
+        "qualifying_vertical_recipe_count": 0,
+        "quality_score": 0.0,
+        "robots_status": "unreachable:TooManyRedirects",
+        "temporary_failures": [
+          "robots_unavailable"
+        ]
+      },
+      "new_state": "QUARANTINED",
+      "previous_state": "QUARANTINED",
+      "reason": "qualification incomplete: robots_unavailable",
+      "source_gate_version": 2,
+      "thresholds": {
+        "deep_fast_track_min_pages": 10,
+        "deep_fast_track_score": 88.0,
+        "promotion_min_qualifying_attempts": 2,
+        "qualification_score": 74.0,
+        "source_gate_version": 2
+      },
+      "timestamp": "2026-10-06T16:53:11.719648+00:00",
+      "vertical": "air_fryer"
+    },
+    {
+      "domain": "crock-pot.com",
+      "event": "SOURCE_QUARANTINED",
+      "metrics": {
+        "domain": "crock-pot.com",
+        "hard_failures": [],
+        "pages_fetched": 0,
+        "pages_sampled": 0,
+        "qualifying_vertical_recipe_count": 0,
+        "quality_score": 0.0,
+        "robots_status": "unreachable:TooManyRedirects",
+        "temporary_failures": [
+          "robots_unavailable"
+        ]
+      },
+      "new_state": "QUARANTINED",
+      "previous_state": "QUARANTINED",
+      "reason": "qualification incomplete: robots_unavailable",
+      "source_gate_version": 2,
+      "thresholds": {
+        "deep_fast_track_min_pages": 10,
+        "deep_fast_track_score": 88.0,
+        "promotion_min_qualifying_attempts": 2,
+        "qualification_score": 74.0,
+        "source_gate_version": 2
+      },
+      "timestamp": "2026-10-06T16:53:11.719648+00:00",
+      "vertical": "air_fryer"
+    },
+    {
+      "domain": "marthastewart.com",
+      "event": "SOURCE_QUARANTINED",
+      "metrics": {
+        "domain": "marthastewart.com",
+        "hard_failures": [],
+        "pages_fetched": 0,
+        "pages_sampled": 0,
+        "qualifying_vertical_recipe_count": 0,
+        "quality_score": 0.0,
+        "robots_status": "unreachable:TooManyRedirects",
+        "temporary_failures": [
+          "robots_unavailable"
+        ]
+      },
+      "new_state": "QUARANTINED",
+      "previous_state": "QUARANTINED",
+      "reason": "qualification incomplete: robots_unavailable",
+      "source_gate_version": 2,
+      "thresholds": {
+        "deep_fast_track_min_pages": 10,
+        "deep_fast_track_score": 88.0,
+        "promotion_min_qualifying_attempts": 2,
+        "qualification_score": 74.0,
+        "source_gate_version": 2
+      },
+      "timestamp": "2026-10-06T16:53:11.719648+00:00",
+      "vertical": "air_fryer"
     }
   ],
   "candidates": {
@@ -8762,7 +8878,7 @@
       "consecutive_healthy_runs": 0,
       "consecutive_qualifying_attempts": 0,
       "crawl_config": {},
-      "discovery_count": 52,
+      "discovery_count": 53,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -8773,8 +8889,8 @@
       ],
       "domain": "365daysofcrockpot.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-10-05T19:21:00.382200+00:00",
-      "last_evaluated_at": "2026-10-05T19:21:00.382200+00:00",
+      "last_discovered_at": "2026-10-06T16:53:11.719648+00:00",
+      "last_evaluated_at": "2026-10-06T16:53:11.719648+00:00",
       "last_qualification_metrics": {
         "domain": "365daysofcrockpot.com",
         "hard_failures": [],
@@ -8790,12 +8906,12 @@
       "origin": "discovered",
       "pinned": false,
       "promotion_eligible": false,
-      "qualification_attempts": 51,
+      "qualification_attempts": 52,
       "quality_score": 0.0,
       "rediscovery_blocked": false,
       "status": "QUARANTINED",
       "status_reason": "qualification incomplete: robots_unavailable",
-      "updated_at": "2026-10-05T19:21:00.382200+00:00",
+      "updated_at": "2026-10-06T16:53:11.719648+00:00",
       "vertical": "air_fryer"
     },
     "amzlink.to": {
@@ -9015,7 +9131,7 @@
       "consecutive_healthy_runs": 0,
       "consecutive_qualifying_attempts": 0,
       "crawl_config": {},
-      "discovery_count": 52,
+      "discovery_count": 53,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -9026,8 +9142,8 @@
       ],
       "domain": "crock-pot.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-10-05T19:21:00.382200+00:00",
-      "last_evaluated_at": "2026-10-05T19:21:00.382200+00:00",
+      "last_discovered_at": "2026-10-06T16:53:11.719648+00:00",
+      "last_evaluated_at": "2026-10-06T16:53:11.719648+00:00",
       "last_qualification_metrics": {
         "domain": "crock-pot.com",
         "hard_failures": [],
@@ -9043,12 +9159,12 @@
       "origin": "discovered",
       "pinned": false,
       "promotion_eligible": false,
-      "qualification_attempts": 51,
+      "qualification_attempts": 52,
       "quality_score": 0.0,
       "rediscovery_blocked": false,
       "status": "QUARANTINED",
       "status_reason": "qualification incomplete: robots_unavailable",
-      "updated_at": "2026-10-05T19:21:00.382200+00:00",
+      "updated_at": "2026-10-06T16:53:11.719648+00:00",
       "vertical": "air_fryer"
     },
     "eatwell101.com": {
@@ -9056,7 +9172,7 @@
       "consecutive_healthy_runs": 0,
       "consecutive_qualifying_attempts": 0,
       "crawl_config": {},
-      "discovery_count": 62,
+      "discovery_count": 63,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -9073,8 +9189,8 @@
       ],
       "domain": "eatwell101.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-10-05T19:21:00.382200+00:00",
-      "last_evaluated_at": "2026-10-05T19:21:00.382200+00:00",
+      "last_discovered_at": "2026-10-06T16:53:11.719648+00:00",
+      "last_evaluated_at": "2026-10-06T16:53:11.719648+00:00",
       "last_qualification_metrics": {
         "domain": "eatwell101.com",
         "hard_failures": [],
@@ -9090,12 +9206,12 @@
       "origin": "discovered",
       "pinned": false,
       "promotion_eligible": false,
-      "qualification_attempts": 51,
+      "qualification_attempts": 52,
       "quality_score": 0.0,
       "rediscovery_blocked": false,
       "status": "QUARANTINED",
       "status_reason": "qualification incomplete: robots_unavailable",
-      "updated_at": "2026-10-05T19:21:00.382200+00:00",
+      "updated_at": "2026-10-06T16:53:11.719648+00:00",
       "vertical": "air_fryer"
     },
     "epicurious.com": {
@@ -9112,7 +9228,7 @@
           "https://epicurious.com/sitemap.xml"
         ]
       },
-      "discovery_count": 52,
+      "discovery_count": 53,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -9123,7 +9239,7 @@
       ],
       "domain": "epicurious.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-10-05T19:21:00.382200+00:00",
+      "last_discovered_at": "2026-10-06T16:53:11.719648+00:00",
       "last_evaluated_at": "2026-09-21T16:31:12.670051+00:00",
       "last_qualification_metrics": {
         "domain": "epicurious.com",
@@ -9210,7 +9326,7 @@
           "https://forktospoon.com/sitemap_index.xml"
         ]
       },
-      "discovery_count": 62,
+      "discovery_count": 63,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -9227,7 +9343,7 @@
       ],
       "domain": "forktospoon.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-10-05T19:21:00.382200+00:00",
+      "last_discovered_at": "2026-10-06T16:53:11.719648+00:00",
       "last_evaluated_at": "2026-08-19T08:48:22.552952+00:00",
       "last_qualification_metrics": {
         "domain": "forktospoon.com",
@@ -9360,7 +9476,7 @@
           "https://kelvinskitchen.com/sitemap_index.xml"
         ]
       },
-      "discovery_count": 62,
+      "discovery_count": 63,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -9377,7 +9493,7 @@
       ],
       "domain": "kelvinskitchen.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-10-05T19:21:00.382200+00:00",
+      "last_discovered_at": "2026-10-06T16:53:11.719648+00:00",
       "last_evaluated_at": "2026-08-19T08:48:22.552952+00:00",
       "last_qualification_metrics": {
         "domain": "kelvinskitchen.com",
@@ -9437,7 +9553,7 @@
       "consecutive_healthy_runs": 0,
       "consecutive_qualifying_attempts": 0,
       "crawl_config": {},
-      "discovery_count": 52,
+      "discovery_count": 53,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -9448,8 +9564,8 @@
       ],
       "domain": "marthastewart.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-10-05T19:21:00.382200+00:00",
-      "last_evaluated_at": "2026-10-05T19:21:00.382200+00:00",
+      "last_discovered_at": "2026-10-06T16:53:11.719648+00:00",
+      "last_evaluated_at": "2026-10-06T16:53:11.719648+00:00",
       "last_qualification_metrics": {
         "domain": "marthastewart.com",
         "hard_failures": [],
@@ -9465,12 +9581,12 @@
       "origin": "discovered",
       "pinned": false,
       "promotion_eligible": false,
-      "qualification_attempts": 50,
+      "qualification_attempts": 51,
       "quality_score": 0.0,
       "rediscovery_blocked": false,
       "status": "QUARANTINED",
       "status_reason": "qualification incomplete: robots_unavailable",
-      "updated_at": "2026-10-05T19:21:00.382200+00:00",
+      "updated_at": "2026-10-06T16:53:11.719648+00:00",
       "vertical": "air_fryer"
     },
     "rstyle.me": {
@@ -9551,7 +9667,7 @@
           "http://slowcookergourmet.net/sitemap19.xml"
         ]
       },
-      "discovery_count": 52,
+      "discovery_count": 53,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -9562,7 +9678,7 @@
       ],
       "domain": "slowcookergourmet.net",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-10-05T19:21:00.382200+00:00",
+      "last_discovered_at": "2026-10-06T16:53:11.719648+00:00",
       "last_evaluated_at": "2026-09-18T14:34:03.637894+00:00",
       "last_qualification_metrics": {
         "domain": "slowcookergourmet.net",
@@ -9649,7 +9765,7 @@
           "https://temeculablogs.com/sitemap_index.xml"
         ]
       },
-      "discovery_count": 62,
+      "discovery_count": 63,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -9666,7 +9782,7 @@
       ],
       "domain": "temeculablogs.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-10-05T19:21:00.382200+00:00",
+      "last_discovered_at": "2026-10-06T16:53:11.719648+00:00",
       "last_evaluated_at": "2026-08-19T06:26:48.638461+00:00",
       "last_qualification_metrics": {
         "domain": "temeculablogs.com",
@@ -9735,7 +9851,7 @@
           "https://thelittlekitchen.net/sitemap.xml"
         ]
       },
-      "discovery_count": 52,
+      "discovery_count": 53,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -9746,7 +9862,7 @@
       ],
       "domain": "thelittlekitchen.net",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-10-05T19:21:00.382200+00:00",
+      "last_discovered_at": "2026-10-06T16:53:11.719648+00:00",
       "last_evaluated_at": "2026-09-18T14:34:03.637894+00:00",
       "last_qualification_metrics": {
         "domain": "thelittlekitchen.net",
@@ -9826,7 +9942,7 @@
           "https://www.themagicalslowcooker.com/sitemap_index.xml"
         ]
       },
-      "discovery_count": 52,
+      "discovery_count": 53,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -9837,7 +9953,7 @@
       ],
       "domain": "themagicalslowcooker.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-10-05T19:21:00.382200+00:00",
+      "last_discovered_at": "2026-10-06T16:53:11.719648+00:00",
       "last_evaluated_at": "2026-09-19T13:57:29.264117+00:00",
       "last_qualification_metrics": {
         "domain": "themagicalslowcooker.com",
@@ -9924,7 +10040,7 @@
           "https://thestayathomechef.com/sitemap_index.xml"
         ]
       },
-      "discovery_count": 62,
+      "discovery_count": 63,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -9941,7 +10057,7 @@
       ],
       "domain": "thestayathomechef.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-10-05T19:21:00.382200+00:00",
+      "last_discovered_at": "2026-10-06T16:53:11.719648+00:00",
       "last_evaluated_at": "2026-08-19T10:40:38.207970+00:00",
       "last_qualification_metrics": {
         "domain": "thestayathomechef.com",
@@ -10020,7 +10136,7 @@
           "https://theyummybowl.com/sitemap_index.xml"
         ]
       },
-      "discovery_count": 62,
+      "discovery_count": 63,
       "discovery_evidence": [
         {
           "first_seen_at": "2026-08-19T06:26:48.638461+00:00",
@@ -10037,7 +10153,7 @@
       ],
       "domain": "theyummybowl.com",
       "first_discovered_at": "2026-08-19T06:26:48.638461+00:00",
-      "last_discovered_at": "2026-10-05T19:21:00.382200+00:00",
+      "last_discovered_at": "2026-10-06T16:53:11.719648+00:00",
       "last_evaluated_at": "2026-08-19T10:40:38.207970+00:00",
       "last_qualification_metrics": {
         "domain": "theyummybowl.com",
