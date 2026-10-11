@@ -3,7 +3,7 @@
     "authoritative": false,
     "authority_contract_version": 2,
     "catalog_sync_generated_at": null,
-    "invalidated_at": "2026-10-11T20:21:13.750976+00:00",
+    "invalidated_at": "2026-10-11T20:21:43.584971+00:00",
     "last_ranking_generated_at": "2026-08-20T21:42:45.736996+00:00",
     "reason": "source_or_catalog_generation_advanced",
     "source_expansion_generated_at": "2026-10-11T19:37:31.283720+00:00",
