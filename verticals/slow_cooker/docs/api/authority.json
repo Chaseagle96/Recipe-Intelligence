@@ -1,8 +1,8 @@
 {
   "authoritative": false,
   "authority_contract_version": 2,
-  "catalog_sync_generated_at": null,
-  "invalidated_at": "2026-10-14T16:59:14.219197+00:00",
+  "catalog_sync_generated_at": "2026-10-14T17:49:08.890254+00:00",
+  "invalidated_at": "2026-10-14T18:30:22.416908+00:00",
   "last_ranking_generated_at": "2026-08-19T05:02:49.320697+00:00",
   "reason": "source_or_catalog_generation_advanced",
   "source_expansion_generated_at": "2026-10-14T15:14:12.032688+00:00",
